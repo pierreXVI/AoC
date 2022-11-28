@@ -4,6 +4,7 @@ import utils
 import collections
 
 YEAR = 2020
+np.set_printoptions(linewidth=300)
 
 
 def day1():
@@ -183,8 +184,81 @@ def day7():
         for _cc in rules[_c]:
             out += _cc[1] * get_cost(_cc[0])
         return out
-    print(get_cost('shiny gold')-1)
+
+    print(get_cost('shiny gold') - 1)
+
+
+def day8():
+    def run(program):
+        acc = i = 0
+        table = [False] * len(program)
+        while True:
+            if i >= len(program):
+                return acc, True
+            if table[i]:
+                return acc, False
+            table[i] = True
+            if program[i][0] == 'acc':
+                acc += program[i][1]
+                i += 1
+            elif program[i][0] == 'jmp':
+                i += program[i][1]
+            elif program[i][0] == 'nop':
+                i += 1
+
+    with open(utils.get_input(YEAR, 8)) as inp:
+        instructions = []
+        for line in inp:
+            act, val = line.split()
+            instructions.append([act, int(val)])
+
+    print(run(instructions)[0])
+
+    for p in instructions:
+        if p[0] == 'jmp' or p[0] == 'nop':
+            p[0] = 'jmp' if p[0] == 'nop' else 'nop'
+            out = run(instructions)
+            if out[1]:
+                print(out[0])
+            p[0] = 'jmp' if p[0] == 'nop' else 'nop'
+
+
+def day9():
+    with open(utils.get_input(YEAR, 9)) as inp:
+        base = [int(inp.readline()) for _ in range(25)]
+        for line in inp:
+            val = int(line)
+            found = False
+            for i in range(len(base)):
+                if val - base[i] in base[:i] + base[i + 1:]:
+                    found = True
+                    break
+            if not found:
+                break
+            base = base[1:] + [val]
+
+        print(val)
+
+    with open(utils.get_input(YEAR, 9)) as inp:
+        base = []
+        for line in inp:
+            if len(base) > 1 and sum(base) == val:
+                break
+            base.append(int(line))
+            while base and sum(base) > val:
+                base = base[1:]
+
+        print(max(base) + min(base))
+
+
+def day10():
+    with open(utils.get_input(YEAR, 10)) as inp:
+        data = np.array([int(line) for line in inp])
+
+    data.sort()
+    diff = np.diff(np.array([0, *data, data[-1] + 3]))
+    print(len(diff[diff == 1]) * len(diff[diff == 3]))
 
 
 if __name__ == '__main__':
-    day4()
+    day10()
