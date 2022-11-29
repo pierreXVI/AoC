@@ -481,5 +481,97 @@ def day15():
     print(djikstra(data, (0, 0), (data.shape[0] - 1, data.shape[1] - 1)))
 
 
+def day16():
+    with open(utils.get_input(YEAR, 16)) as inp:
+        data = inp.readline()[:-1]
+        data = bin(int(data, 16))[2:].zfill(4 * len(data))
+
+    def parse_msg(msg):
+        version = int(msg[0:3], 2)
+        type_id = int(msg[3:6], 2)
+        remainder = msg[6:]
+
+        if type_id == 4:
+            value = ''
+            while True:
+                value += remainder[1:5]
+                if remainder[0] == '0':
+                    remainder = remainder[5:]
+                    break
+                remainder = remainder[5:]
+            value = int(value, 2)
+
+        else:
+            values = []
+            if remainder[0] == '0':
+                bits_packet = remainder[16:16 + int(remainder[1:16], 2)]
+                while len(bits_packet) > 8:
+                    subversion, bits_packet, value = parse_msg(bits_packet)
+                    version += subversion
+                    values.append(value)
+                remainder = remainder[16 + int(remainder[1:16], 2):]
+            else:
+                n_subs = int(remainder[1:12], 2)
+                remainder = remainder[12:]
+                for _ in range(n_subs):
+                    subversion, remainder, value = parse_msg(remainder)
+                    version += subversion
+                    values.append(value)
+
+            if type_id == 0:
+                value = sum(values)
+            elif type_id == 1:
+                value = np.prod(values)
+            elif type_id == 2:
+                value = min(values)
+            elif type_id == 3:
+                value = max(values)
+            elif type_id == 5:
+                value = 1 if values[0] > values[1] else 0
+            elif type_id == 6:
+                value = 1 if values[0] < values[1] else 0
+            elif type_id == 7:
+                value = 1 if values[0] == values[1] else 0
+
+        return version, remainder, value
+
+    total = 0
+    result = ''
+    while len(data) > 8:
+        ver, data, val = parse_msg(data)
+        total += ver
+        result += str(val)
+    print(total)
+    print(result)
+
+
+def day17():
+    with open(utils.get_input(YEAR, 17)) as inp:
+        data = inp.readline().split(':')[1].split(',')
+        x_min, x_max = [int(d) for d in data[0].split('=')[1].split('..')]
+        y_min, y_max = [int(d) for d in data[1].split('=')[1].split('..')]
+
+    def shoot(v_x, v_y):
+        x, y = 0, 0
+        while x <= x_max and y >= y_min:
+            x += v_x
+            y += v_y
+            if x_min <= x <= x_max and y_min <= y <= y_max:
+                return True
+            v_x = max(0, v_x - 1)
+            v_y -= 1
+        return False
+
+    print(-y_min * (-y_min - 1) // 2)
+
+    count = 0
+    for i in range(x_max + 1):
+        for j in range(y_min - 1, -y_min):
+            if shoot(i, j):
+                count += 1
+            pass
+    print(count)
+
+
 if __name__ == '__main__':
-    day15()
+    day17()
