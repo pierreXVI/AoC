@@ -58,5 +58,37 @@ def day2():
                     print(''.join([chr(d) for d in letters[i][foo == 0]]))
 
 
+def day3():
+    with open(utils.get_input(YEAR, 3)) as inp:
+
+        grid = np.empty((0, 0), dtype=list)
+        claims = set()
+        for line in inp:
+            line = line.split()
+            x, y = [int(d) for d in line[2][:-1].split(',')]
+            w, h = [int(d) for d in line[3].split('x')]
+            if grid.shape[0] <= x + w or grid.shape[1] <= y + h:
+                new_grid = np.empty((max(grid.shape[0], x + w), max(grid.shape[1], y + h)), dtype=list)
+                for i in range(new_grid.shape[0]):
+                    for j in range(new_grid.shape[1]):
+                        new_grid[i, j] = []
+                new_grid[:grid.shape[0], :grid.shape[1]] = grid
+                grid = new_grid
+            for i in range(x, x + w):
+                for j in range(y, y + h):
+                    grid[i, j].append(line[0][1:])
+            claims.add(line[0][1:])
+        count = 0
+        overlap = set()
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                if len(grid[i, j]) > 1:
+                    count += 1
+                    for c in grid[i, j]:
+                        overlap.add(c)
+        print(count)
+        print(claims.difference(overlap).pop())
+
+
 if __name__ == '__main__':
-    day2()
+    day3()

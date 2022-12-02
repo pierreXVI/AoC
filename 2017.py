@@ -33,5 +33,38 @@ def day2():
         print(count2)
 
 
+def day3():
+    with open(utils.get_input(YEAR, 3)) as inp:
+        n_max = int(inp.readline())
+        i = 1
+        while i * i < n_max:
+            i += 2
+        grid = np.zeros((i, i), dtype=int)
+        alpha = 1 + 0j
+        loc = (1 + 1j) * (i // 2)
+        length = 1
+        grid[int(loc.real), int(loc.imag)] = 1
+        new_grid = grid.copy()
+
+        n = 1
+        while True:
+            for i in range(length):
+                n += 1
+                loc += alpha
+                x, y = int(loc.real), int(loc.imag)
+                new_grid[x, y] = np.sum(new_grid[max(0, x - 1):x + 2, max(0, y - 1):y + 2])
+                grid[x, y] = n
+                if n == n_max:
+                    break
+            if n == n_max:
+                break
+            alpha *= 1j
+            if alpha == alpha.real:
+                length += 1
+        loc -= (1 + 1j) * (i // 2)
+        print(int(abs(loc.real) + abs(loc.imag)))
+        print(min(new_grid[new_grid > n_max]))
+
+
 if __name__ == '__main__':
-    day2()
+    day3()

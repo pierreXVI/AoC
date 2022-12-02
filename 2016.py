@@ -60,5 +60,26 @@ def day2():
         print(code2)
 
 
+def day3():
+    with open(utils.get_input(YEAR, 3)) as inp:
+        buffer = np.zeros((3, 3))
+        count1 = count2 = i = 0
+        for line in inp:
+            buffer[i] = [int(d) for d in line.split()]
+            sides = sorted(buffer[i])
+            if sides[0] + sides[1] > sides[2]:
+                count1 += 1
+
+            i += 1
+            if i == 3:
+                for j in range(3):
+                    sides = sorted(buffer[:, j])
+                    if sides[0] + sides[1] > sides[2]:
+                        count2 += 1
+                i = 0
+        print(count1)
+        print(count2)
+
+
 if __name__ == '__main__':
-    day2()
+    day3()

@@ -1,3 +1,5 @@
+import numpy as np
+
 import utils
 
 YEAR = 2019
@@ -43,5 +45,31 @@ def day2():
                     break
 
 
+def day3():
+    with open(utils.get_input(YEAR, 3)) as inp:
+        direction = {'U': 1j, 'D': -1j, 'L': -1, 'R': 1}
+
+        wire1 = {}
+        loc = n = 0
+        for move in inp.readline().split(','):
+            for _ in range(int(move[1:])):
+                loc += direction[move[0]]
+                n += 1
+                if loc not in wire1:
+                    wire1[loc] = n
+
+        best1 = best2 = np.inf
+        loc = n = 0
+        for move in inp.readline().split(','):
+            for _ in range(int(move[1:])):
+                loc += direction[move[0]]
+                n += 1
+                if loc in wire1:
+                    best1 = min(best1, int(abs(loc.real) + abs(loc.imag)))
+                    best2 = min(best2, n + wire1[loc])
+        print(best1)
+        print(best2)
+
+
 if __name__ == '__main__':
-    day2()
+    day3()
