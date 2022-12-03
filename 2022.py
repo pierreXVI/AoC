@@ -34,5 +34,28 @@ def day2():
         print(score2)
 
 
+def day3():
+    with open(utils.get_input(YEAR, 3)) as inp:
+        count1 = count2 = 0
+        group = []
+        for line in inp:
+            n = len(line) // 2
+            common = set(line[:n]).intersection(line[n:-1]).pop()
+            if common.islower():
+                count1 += ord(common) - ord('a') + 1
+            else:
+                count1 += ord(common) - ord('A') + 27
+            group.append(set(line[:-1]))
+            if len(group) == 3:
+                common = group[0].intersection(group[1]).intersection(group[2]).pop()
+                if common.islower():
+                    count2 += ord(common) - ord('a') + 1
+                else:
+                    count2 += ord(common) - ord('A') + 27
+                group = []
+        print(count1)
+        print(count2)
+
+
 if __name__ == '__main__':
-    day2()
+    day3()
