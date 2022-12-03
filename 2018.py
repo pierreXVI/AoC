@@ -3,6 +3,7 @@ import collections
 import numpy as np
 
 import utils
+import re
 
 np.set_printoptions(linewidth=300)
 
@@ -90,5 +91,35 @@ def day3():
         print(claims.difference(overlap).pop())
 
 
+def day4():
+    with open(utils.get_input(YEAR, 4)) as inp:
+        data = sorted([line for line in inp])
+
+        asleep = collections.defaultdict(lambda: np.zeros((60,), dtype=int))
+        for line in data:
+            if '#' in line:
+                guard = int(re.search(r'Guard #(\d+) begins shift', line).groups()[0])
+            elif 'falls asleep' in line:
+                start = int(re.match(r'\[\d{4}-\d{2}-\d{2} \d{2}:(\d{2})]', line).groups()[0])
+            else:
+                m = int(re.match(r'\[\d{4}-\d{2}-\d{2} \d{2}:(\d{2})]', line).groups()[0])
+                asleep[guard][start: m] += 1
+
+        best1 = sleepy1 = best2 = sleepy2 = 0
+        for guard in asleep:
+            score = np.sum(asleep[guard])
+            if score > best1:
+                best1 = score
+                sleepy1 = guard
+
+            score = np.max(asleep[guard])
+            if score > best2:
+                best2 = score
+                sleepy2 = guard
+
+        print(sleepy1 * np.argmax(asleep[sleepy1]))
+        print(sleepy2 * np.argmax(asleep[sleepy2]))
+
+
 if __name__ == '__main__':
-    day3()
+    day4()

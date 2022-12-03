@@ -71,5 +71,28 @@ def day3():
         print(best2)
 
 
+def day4():
+    with open(utils.get_input(YEAR, 4)) as inp:
+        start, stop = [int(d) for d in inp.readline().split('-')]
+
+        count1 = count2 = 0
+        for n in range(start, stop + 1):
+            diff = np.diff(np.array([int(d) for d in str(n)]))
+            if (diff >= 0).all() and (diff == 0).any():
+                count1 += 1
+
+                ok = False
+                for i in range(len(diff)):
+                    if diff[i] == 0:
+                        if (i == 0 or diff[i - 1] != 0) and (i == 4 or diff[i + 1] != 0):
+                            ok = True
+                            break
+                if ok:
+                    count2 += 1
+
+        print(count1)
+        print(count2)
+
+
 if __name__ == '__main__':
-    day3()
+    day4()

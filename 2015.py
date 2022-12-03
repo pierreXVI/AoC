@@ -1,4 +1,5 @@
 import utils
+import hashlib
 
 YEAR = 2015
 
@@ -54,14 +55,17 @@ def day3():
         print(len(visited2))
 
 
-#
-#
-# def day4(prefix='00000', inp='yzbqklnj'):
-#     i = 0
-#     n = len(prefix)
-#     while hashlib.md5("{0}{1}".format(inp, i).encode('utf-8')).hexdigest()[:n] != prefix:
-#         i += 1
-#     print("MD5({0}{1}) starts with {2} (answer: {1})".format(inp, i, prefix))
+def day4():
+    with open(utils.get_input(YEAR, 4)) as inp:
+        key = inp.readline()[:-1]
+    i = 0
+    for n in (5, 6):
+        prefix = '0' * n
+        while hashlib.md5("{0}{1}".format(key, i).encode('utf-8')).hexdigest()[:n] != prefix:
+            i += 1
+        print(i)
+
+
 #
 #
 # def day5():
@@ -220,4 +224,4 @@ def day3():
 
 
 if __name__ == '__main__':
-    day3()
+    day4()

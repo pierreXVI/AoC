@@ -1,5 +1,5 @@
 import numpy as np
-
+import collections
 import utils
 
 YEAR = 2016
@@ -81,5 +81,31 @@ def day3():
         print(count2)
 
 
+def day4():
+    with open(utils.get_input(YEAR, 4)) as inp:
+        count = 0
+        res2 = 0
+        for line in inp:
+            data = line.split('-')
+            name = list('-'.join(data[:-1]))
+            letters = collections.Counter(''.join(name))
+            sorted_letters = sorted(letters, key=lambda x: (-letters[x], x))
+            data = data[-1].split('[')
+            sector_id = int(data[0])
+            checksum = data[1][:-2]
+            if ''.join(sorted_letters[:5]) == checksum:
+                count += sector_id
+            for i in range(len(name)):
+                if name[i] == '-':
+                    name[i] = ' '
+                else:
+                    name[i] = chr((ord(name[i]) - ord('a') + sector_id) % 26 + ord('a'))
+            name = ''.join(name)
+            if 'northpole' in name:
+                res2 = sector_id
+        print(count)
+        print(res2)
+
+
 if __name__ == '__main__':
-    day3()
+    day4()

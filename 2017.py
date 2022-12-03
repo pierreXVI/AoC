@@ -66,5 +66,32 @@ def day3():
         print(min(new_grid[new_grid > n_max]))
 
 
+def day4():
+    with open(utils.get_input(YEAR, 4)) as inp:
+        count1 = count2 = 0
+        for line in inp:
+            words1 = set()
+            words2 = set()
+            flag1 = flag2 = True
+            for w in line.split():
+                if w in words1:
+                    flag1 = False
+                    break
+                words1.add(w)
+
+                w = ''.join(sorted(list(w)))
+                if w in words2:
+                    flag2 = False
+                    break
+                words2.add(w)
+
+            if flag1:
+                count1 += 1
+                if flag2:
+                    count2 += 1
+        print(count1)
+        print(count2)
+
+
 if __name__ == '__main__':
-    day3()
+    day4()
