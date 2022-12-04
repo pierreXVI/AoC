@@ -57,5 +57,18 @@ def day3():
         print(count2)
 
 
+def day4():
+    with open(utils.get_input(YEAR, 4)) as inp:
+        count1 = count2 = 0
+        for line in inp:
+            min1, max1, min2, max2 = [int(d) for ranges in line.split(',') for d in ranges.split('-')]
+            if (min1 <= min2 and max2 <= max1) or (min2 <= min1 and max1 <= max2):
+                count1 += 1
+            if (min1 <= max2 and min2 <= max1) or (min2 <= max1 and min1 <= max2):
+                count2 += 1
+        print(count1)
+        print(count2)
+
+
 if __name__ == '__main__':
-    day3()
+    day4()
