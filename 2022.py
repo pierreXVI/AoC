@@ -70,5 +70,40 @@ def day4():
         print(count2)
 
 
+def day5():
+    with open(utils.get_input(YEAR, 5)) as inp:
+        data = []
+        for line in inp:
+            if line == '\n':
+                break
+            data.append(line)
+
+        loc = {}
+        line = data.pop()
+        for i in range(len(line) - 1):
+            if line[i] != ' ':
+                loc[int(line[i])] = i
+
+        piles1 = {i: [] for i in loc}
+        piles2 = {i: [] for i in loc}
+        for line in data[::-1]:
+            for i in loc:
+                if line[loc[i]] != ' ':
+                    piles1[i].append(line[loc[i]])
+                    piles2[i].append(line[loc[i]])
+
+        for line in inp:
+            line = line.split()
+            n = int(line[1])
+            i = int(line[3])
+            j = int(line[5])
+            for _ in range(n):
+                piles1[j].append(piles1[i].pop())
+            piles2[j] = piles2[j] + piles2[i][-n:]
+            piles2[i] = piles2[i][:-n]
+        print(''.join([piles1[i].pop() for i in piles1]))
+        print(''.join([piles2[i].pop() for i in piles2]))
+
+
 if __name__ == '__main__':
-    day4()
+    day5()
