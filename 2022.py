@@ -105,5 +105,20 @@ def day5():
         print(''.join([piles2[i].pop() for i in piles2]))
 
 
+def day6():
+    with open(utils.get_input(YEAR, 6)) as inp:
+        datastream = inp.readline().strip()
+
+        for i in range(4, len(datastream)):
+            if len(set(datastream[i - 4: i])) == 4:
+                print(i)
+                break
+
+        for i in range(14, len(datastream)):
+            if len(set(datastream[i - 14: i])) == 14:
+                print(i)
+                break
+
+
 if __name__ == '__main__':
-    day5()
+    day6()
