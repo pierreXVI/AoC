@@ -1,3 +1,5 @@
+import numpy as np
+
 import utils
 
 YEAR = 2022
@@ -120,5 +122,62 @@ def day6():
                 break
 
 
+def day7():
+    with open(utils.get_input(YEAR, 7)) as inp:
+        data = {'/': {}}
+        depth = ['/']
+        current = data['/']
+        line = True
+        while line:
+            line = inp.readline()
+            if line.startswith('$ cd'):
+                foo = line.split()[2]
+                if foo == '/':
+                    depth = ['/']
+                    current = data['/']
+                elif foo == '..':
+                    depth = depth[:-1]
+                    current = data
+                    for d in depth:
+                        current = current[d]
+                else:
+                    depth.append(foo)
+                    current = current[foo]
+            else:
+                new_line = True
+                while new_line:
+                    last = inp.tell()
+                    new_line = inp.readline()
+                    if new_line.startswith('$'):
+                        inp.seek(last)
+                        break
+                    if new_line.startswith('dir'):
+                        current[new_line.split()[1]] = {}
+                    elif new_line:
+                        foo, bar = new_line.split()
+                        current[bar] = int(foo)
+
+    all_sizes = []
+
+    def recursive_shit(structure):
+        size = score = 0
+        for sub in structure:
+            if isinstance(structure[sub], dict):
+                sub_size, sub_score = recursive_shit(structure[sub])
+                score += sub_score
+                if sub_size <= 100000:
+                    score += sub_size
+                size += sub_size
+            else:
+                size += structure[sub]
+        all_sizes.append(size)
+        return size, score
+
+    result = recursive_shit(data)
+    all_sizes = np.array(all_sizes)
+    print(result[1])
+    print(min(all_sizes[all_sizes >= result[0] - 40000000]))
+
+
 if __name__ == '__main__':
-    day6()
+    day7()
