@@ -179,5 +179,47 @@ def day7():
     print(min(all_sizes[all_sizes >= result[0] - 40000000]))
 
 
+def day8():
+    with open(utils.get_input(YEAR, 8)) as inp:
+        grid = np.array([[int(d) for d in line[:-1]] for line in inp])
+
+    visible = np.zeros_like(grid, dtype=bool)
+    visible[0] = visible[-1] = visible[:, 0] = visible[:, -1] = True
+    for i in range(1, visible.shape[0] - 1):
+        for j in range(1, visible.shape[1] - 1):
+            if grid[i, j] > max(grid[i, :j]) or grid[i, j] > max(grid[i, j + 1:]):
+                visible[i, j] = True
+    for j in range(1, visible.shape[1] - 1):
+        for i in range(1, visible.shape[0] - 1):
+            if grid[i, j] > max(grid[:i, j]) or grid[i, j] > max(grid[i + 1:, j]):
+                visible[i, j] = True
+    print(np.sum(visible) == 1717)
+
+    score = np.ones_like(grid)
+    for i in range(visible.shape[0]):
+        for j in range(visible.shape[1]):
+            k = i
+            for k in range(i + 1, visible.shape[0]):
+                if grid[i, j] <= grid[k, j]:
+                    break
+            score[i, j] *= k - i
+            k = j
+            for k in range(j + 1, visible.shape[1]):
+                if grid[i, j] <= grid[i, k]:
+                    break
+            score[i, j] *= k - j
+            k = 0
+            for k in range(1, i + 1):
+                if grid[i, j] <= grid[i - k, j]:
+                    break
+            score[i, j] *= k
+            k = 0
+            for k in range(1, j + 1):
+                if grid[i, j] <= grid[i, j - k]:
+                    break
+            score[i, j] *= k
+    print(np.max(score) == 321975)
+
+
 if __name__ == '__main__':
-    day7()
+    day8()
