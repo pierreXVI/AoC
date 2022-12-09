@@ -221,5 +221,38 @@ def day8():
     print(np.max(score) == 321975)
 
 
+def day9():
+    def move(master, slave):
+        if abs(master.real - slave.real) == abs(master.imag - slave.imag) and abs(master.imag - slave.imag) > 1:
+            slave = master.real + (1 if master.real < slave.real else -1) \
+                    + 1j * (master.imag + (1 if master.imag < slave.imag else -1))
+        elif abs(master.real - slave.real) > 1:
+            slave = master.real + (1 if master.real < slave.real else -1) + 1j * master.imag
+        elif abs(master.imag - slave.imag) > 1:
+            slave = master.real + 1j * (master.imag + (1 if master.imag < slave.imag else -1))
+        return slave
+
+    with open(utils.get_input(YEAR, 9)) as inp:
+        table = {'R': 1, 'L': -1, 'U': 1j, 'D': -1j}
+        rope1 = 2 * [0 + 0j]
+        rope2 = 10 * [0 + 0j]
+        visited1 = {rope1[-1]}
+        visited2 = {rope2[-1]}
+        for line in inp:
+            where, n = line.split()
+            for _ in range(int(n)):
+                rope1[0] += table[where]
+                rope2[0] += table[where]
+                for i in range(1, len(rope1)):
+                    rope1[i] = move(rope1[i - 1], rope1[i])
+                for i in range(1, len(rope2)):
+                    rope2[i] = move(rope2[i - 1], rope2[i])
+                visited1.add(rope1[-1])
+                visited2.add(rope2[-1])
+
+        print(len(visited1))
+        print(len(visited2))
+
+
 if __name__ == '__main__':
-    day8()
+    day9()
