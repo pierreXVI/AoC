@@ -223,13 +223,11 @@ def day8():
 
 def day9():
     def move(master, slave):
-        if abs(master.real - slave.real) == abs(master.imag - slave.imag) and abs(master.imag - slave.imag) > 1:
-            slave = master.real + (1 if master.real < slave.real else -1) \
-                    + 1j * (master.imag + (1 if master.imag < slave.imag else -1))
-        elif abs(master.real - slave.real) > 1:
-            slave = master.real + (1 if master.real < slave.real else -1) + 1j * master.imag
-        elif abs(master.imag - slave.imag) > 1:
-            slave = master.real + 1j * (master.imag + (1 if master.imag < slave.imag else -1))
+        dist = master - slave
+        if abs(master.real - slave.real) > 1 or abs(master.imag - slave.imag) > 1:
+            dist = dist.real / (abs(dist.real) if dist.real != 0 else 1) \
+                   + 1j * (dist.imag / (abs(dist.imag) if dist.imag != 0 else 1))
+            slave += dist
         return slave
 
     with open(utils.get_input(YEAR, 9)) as inp:
@@ -250,8 +248,8 @@ def day9():
                 visited1.add(rope1[-1])
                 visited2.add(rope2[-1])
 
-        print(len(visited1))
-        print(len(visited2))
+        print(len(visited1) == 6745)
+        print(len(visited2) == 2793)
 
 
 if __name__ == '__main__':
