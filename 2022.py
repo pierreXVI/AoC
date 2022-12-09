@@ -193,7 +193,7 @@ def day8():
         for i in range(1, visible.shape[0] - 1):
             if grid[i, j] > max(grid[:i, j]) or grid[i, j] > max(grid[i + 1:, j]):
                 visible[i, j] = True
-    print(np.sum(visible) == 1717)
+    print(np.sum(visible))
 
     score = np.ones_like(grid)
     for i in range(visible.shape[0]):
@@ -218,7 +218,7 @@ def day8():
                 if grid[i, j] <= grid[i, j - k]:
                     break
             score[i, j] *= k
-    print(np.max(score) == 321975)
+    print(np.max(score))
 
 
 def day9():
