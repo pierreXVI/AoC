@@ -3,6 +3,7 @@ import numpy as np
 import utils
 
 YEAR = 2022
+np.set_printoptions(linewidth=300)
 
 
 def day1():
@@ -250,5 +251,31 @@ def day9():
         print(len(visited2))
 
 
+def day10():
+    with open(utils.get_input(YEAR, 10)) as inp:
+        x = 1
+        n = 1
+        score = 0
+        display = np.zeros((6, 40), dtype=bool)
+        for line in inp:
+            if n in (20, 60, 100, 140, 180, 220):
+                score += n * x
+            if x <= (n - 1) % 40 + 1 <= x + 2:
+                display[(n - 1) // 40, (n - 1) % 40] = True
+            if line.startswith('noop'):
+                n += 1
+            else:
+                n += 1
+                if n in (20, 60, 100, 140, 180, 220):
+                    score += n * x
+                if x <= (n - 1) % 40 + 1 <= x + 2:
+                    display[(n - 1) // 40, (n - 1) % 40] = True
+                x += int(line.split()[1])
+                n += 1
+
+        print(score)
+        print('\n'.join(''.join('##' if p else '  ' for p in d) for d in display))
+
+
 if __name__ == '__main__':
-    day9()
+    day10()
