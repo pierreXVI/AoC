@@ -281,7 +281,7 @@ def day10():
 
 def day11():
     with open(utils.get_input(YEAR, 11)) as inp:
-        monkeys = {}
+        monkeys_0 = {}
         while True:
             try:
                 monkey_id = int(inp.readline().split()[1][:-1])
@@ -290,11 +290,14 @@ def day11():
                 test = int(inp.readline().split('by')[1])
                 true = int(inp.readline().split('monkey')[1])
                 false = int(inp.readline().split('monkey')[1])
-                monkeys[monkey_id] = {'items': items, 'oper': operation, 'test': (test, true, false)}
+                monkeys_0[monkey_id] = {'items': items, 'oper': operation, 'test': (test, true, false)}
                 inp.readline()
             except IndexError:
                 break
 
+        monkeys = {
+            m: {'items': monkeys_0[m]['items'].copy(), 'oper': monkeys_0[m]['oper'], 'test': monkeys_0[m]['test']} for m
+            in monkeys_0}
         monkey_ids = sorted(list(monkeys))
         scores = collections.defaultdict(int)
         for _ in range(20):
@@ -302,6 +305,25 @@ def day11():
                 for item in monkeys[m]['items']:
                     scores[m] += 1
                     level = eval(monkeys[m]['oper'].format(item)) // 3
+                    if level % monkeys[m]['test'][0]:
+                        monkeys[monkeys[m]['test'][2]]['items'].append(level)
+                    else:
+                        monkeys[monkeys[m]['test'][1]]['items'].append(level)
+                monkeys[m]['items'] = []
+        print(np.prod(sorted(scores.values())[-2:]))
+
+        monkeys = {
+            m: {'items': monkeys_0[m]['items'].copy(), 'oper': monkeys_0[m]['oper'], 'test': monkeys_0[m]['test']} for m
+            in monkeys_0}
+        monkey_ids = sorted(list(monkeys))
+        scores = collections.defaultdict(int)
+        ref = np.prod([monkeys[m]['test'][0] for m in monkeys])
+        for _ in range(10000):
+            for m in monkey_ids:
+                for item in monkeys[m]['items']:
+                    scores[m] += 1
+                    level = eval(monkeys[m]['oper'].format(item))
+                    level = level % ref
                     if level % monkeys[m]['test'][0]:
                         monkeys[monkeys[m]['test'][2]]['items'].append(level)
                     else:
