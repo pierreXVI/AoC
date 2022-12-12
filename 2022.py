@@ -1,3 +1,5 @@
+import heapq
+
 import numpy as np
 
 import utils
@@ -277,5 +279,66 @@ def day10():
         print('\n'.join(''.join('##' if p else '  ' for p in d) for d in display))
 
 
+def day12():
+    def djikstra(costs, start, end):
+        score = {(x, y): np.inf for x in range(costs.shape[0]) for y in range(costs.shape[1])}
+        score[start] = 0
+        done = set()
+        hq = [(score[start], start[0], start[1]), ]
+
+        while hq:
+            c, x, y = heapq.heappop(hq)
+            # assert c == score[x, y]
+            # assert (x, y) not in done
+            if (x, y) == end:
+                break
+            done.add((x, y))
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                if 0 <= x + dx < costs.shape[0] and 0 <= y + dy < costs.shape[1] and (x + dx, y + dy) not in done:
+                    val = c + 1
+                    if val < score[x + dx, y + dy] and costs[x + dx, y + dy] <= costs[x, y] + 1:
+                        score[x + dx, y + dy] = val
+                        heapq.heappush(hq, (score[x + dx, y + dy], x + dx, y + dy))
+
+        return score[end]
+
+    def reverse_djikstra(costs, start, end):
+        score = {(x, y): np.inf for x in range(costs.shape[0]) for y in range(costs.shape[1])}
+        score[start] = 0
+        done = set()
+        hq = [(score[start], start[0], start[1]), ]
+
+        while hq:
+            c, x, y = heapq.heappop(hq)
+            # assert c == score[x, y]
+            # assert (x, y) not in done
+            if costs[x, y] == end:
+                break
+            done.add((x, y))
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                if 0 <= x + dx < costs.shape[0] and 0 <= y + dy < costs.shape[1] and (x + dx, y + dy) not in done:
+                    val = c + 1
+                    if val < score[x + dx, y + dy] and costs[x + dx, y + dy] <= costs[x, y] + 1:
+                        score[x + dx, y + dy] = val
+                        heapq.heappush(hq, (score[x + dx, y + dy], x + dx, y + dy))
+
+        return score[end]
+
+    with open(utils.get_input(YEAR, 12)) as inp:
+        grid = np.array([[ord(d) for d in line[:-1]] for line in inp])
+        xs, ys = np.argwhere(grid == ord('S'))[0]
+        xe, ye = np.argwhere(grid == ord('E'))[0]
+        grid[xs, ys] = ord('a')
+        grid[xe, ye] = ord('z')
+
+        print(djikstra(grid, (xs, ys), (xe, ye)))
+
+        foo = np.inf
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                if grid[i, j] == ord('a'):
+                    foo = min(foo, djikstra(grid, (i, j), (xe, ye)))
+        print(foo)
+
 if __name__ == '__main__':
-    day10()
+    day12()
