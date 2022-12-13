@@ -1,4 +1,6 @@
+import functools
 import heapq
+import json
 
 import numpy as np
 
@@ -340,5 +342,38 @@ def day12():
                     foo = min(foo, djikstra(grid, (i, j), (xe, ye)))
         print(foo)
 
+
+def day13():
+    def compare(l1, l2):
+        for x1, x2 in zip(l1, l2):
+            if isinstance(x1, int) and isinstance(x2, int):
+                if x1 != x2:
+                    return 2 * (x1 < x2) - 1
+            else:
+                x1 = x1 if isinstance(x1, list) else [x1]
+                x2 = x2 if isinstance(x2, list) else [x2]
+                res = compare(x1, x2)
+                if res:
+                    return res
+        return 1 if len(l1) < len(l2) else -1 if len(l2) < len(l1) else 0
+
+    with open(utils.get_input(YEAR, 13)) as inp:
+        count = n = 0
+        packets = [[[2]], [[6]]]
+        while True:
+            p1 = json.loads(inp.readline())
+            p2 = json.loads(inp.readline())
+            n += 1
+            if compare(p1, p2) == 1:
+                count += n
+            packets.append(p1)
+            packets.append(p2)
+            if not inp.readline():
+                break
+        print(count)
+        packets.sort(key=functools.cmp_to_key(compare), reverse=True)
+        print((packets.index([[2]]) + 1) * (packets.index([[6]]) + 1))
+
+
 if __name__ == '__main__':
-    day12()
+    day13()
