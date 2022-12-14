@@ -375,5 +375,63 @@ def day13():
         print((packets.index([[2]]) + 1) * (packets.index([[6]]) + 1))
 
 
+def day14():
+    def fall():
+        x, y = 500, 0
+        while True:
+            move = False
+            for dx in (0, -1, 1):
+                if (0 <= x + dx < grid.shape[0]) and grid[x + dx, y + 1] == 0:
+                    x += dx
+                    y += 1
+                    move = True
+                    break
+            if y == grid.shape[1] - 1:
+                return True
+            if not move:
+                grid[x, y] = 2
+                return y == 0
+
+    with open(utils.get_input(YEAR, 14)) as inp:
+        grid = np.zeros((0, 0), dtype=int)
+        for line in inp:
+            points = np.array([[int(d) for d in p.split(',')] for p in line.split('->')])
+            new_x, new_y = np.max(points, axis=0)
+            if new_x >= grid.shape[0] or new_y >= grid.shape[1]:
+                new_grid = np.zeros((max(new_x + 1, grid.shape[0]), max(new_y + 1, grid.shape[1])), dtype=int)
+                new_grid[:grid.shape[0], :grid.shape[1]] = grid
+                grid = new_grid
+            for i in range(points.shape[0] - 1):
+                x1, x2 = sorted([points[i, 0], points[i + 1, 0]])
+                y1, y2 = sorted([points[i, 1], points[i + 1, 1]])
+                grid[x1:x2 + 1, y1:y2 + 1] = 1
+
+        n = 0
+        while not fall():
+            n += 1
+        print(n)
+
+        nx, ny = grid.shape
+        points = np.array([[500 - ny - 1, ny + 1], [500 + ny + 1, ny + 1]])
+        new_x, new_y = np.max(points, axis=0)
+        if new_x >= grid.shape[0] or new_y >= grid.shape[1]:
+            new_grid = np.zeros((max(new_x + 1, grid.shape[0]), max(new_y + 1, grid.shape[1])), dtype=int)
+            new_grid[:grid.shape[0], :grid.shape[1]] = grid
+            grid = new_grid
+        for i in range(points.shape[0] - 1):
+            x1, x2 = sorted([points[i, 0], points[i + 1, 0]])
+            y1, y2 = sorted([points[i, 1], points[i + 1, 1]])
+            grid[x1:x2 + 1, y1:y2 + 1] = 1
+
+        n = grid.shape[1] ** 2
+        grid[grid == 2] = 0
+        for j in range(1, grid.shape[1]):
+            for i in range(500 - j, 500 + j + 1):
+                if grid[i, j] == 1 or np.sum(grid[i - 1:i + 2, j - 1]) == 3:
+                    grid[i, j] = 1
+                    n -= 1
+        print(n)
+
+
 if __name__ == '__main__':
-    day13()
+    day14()
