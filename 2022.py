@@ -1,6 +1,7 @@
 import functools
 import heapq
 import json
+import re
 
 import numpy as np
 
@@ -433,5 +434,51 @@ def day14():
         print(n)
 
 
+def day15():
+    with open(utils.get_input(YEAR, 15)) as inp:
+        data = np.array([list(map(int, re.match(
+            r'Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)', line).groups()
+                                  )) for line in inp])
+
+    intervals = []
+    beacons = set()
+    y = 2000000
+    for xs, ys, xb, yb in data:
+        if yb == y:
+            beacons.add(xb)
+        d = abs(xb - xs) + abs(yb - ys) - abs(y - ys)
+        if d > 0:
+            intervals.append([xs - d, xs + d])
+    intervals.sort()
+    x, y = intervals[0]
+    for bar in intervals[1:]:
+        y = max(y, bar[1])
+    print(y - x + 1 - len(beacons))
+
+    n = 4000000
+    y = 0
+    while y < n:
+        intervals = []
+        for xs, ys, xb, yb in data:
+            d = abs(xb - xs) + abs(yb - ys) - abs(y - ys)
+            if d > 0:
+                intervals.append([xs - d, xs + d])
+        x = res = 0
+        overlap = np.inf
+        for x_min, x_max in sorted(intervals):
+            if x < x_min:
+                res = n * (x + 1) + y
+                break
+            overlap = min(overlap, x - x_min + 1)
+            x = max(x, x_max)
+            if x >= n:
+                break
+
+        if res:
+            print(res)
+            break
+        y += max(1, overlap // 2)
+
+
 if __name__ == '__main__':
-    day14()
+    day15()
