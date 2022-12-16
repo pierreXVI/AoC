@@ -456,28 +456,16 @@ def day15():
     print(y - x + 1 - len(beacons))
 
     n = 4000000
-    y = 0
-    while y < n:
-        intervals = []
-        for xs, ys, xb, yb in data:
-            d = abs(xb - xs) + abs(yb - ys) - abs(y - ys)
-            if d > 0:
-                intervals.append([xs - d, xs + d])
-        x = res = 0
-        overlap = np.inf
-        for x_min, x_max in sorted(intervals):
-            if x < x_min:
-                res = n * (x + 1) + y
-                break
-            overlap = min(overlap, x - x_min + 1)
-            x = max(x, x_max)
-            if x >= n:
-                break
-
-        if res:
-            print(res)
-            break
-        y += max(1, overlap // 2)
+    data[:, 2] = np.abs(data[:, 2] - data[:, 0]) + np.abs(data[:, 3] - data[:, 1])
+    data = data[:, :3]
+    for x1, y1, d1 in data:
+        foo1 = x1 + y1 + d1
+        for x2, y2, d2 in data:
+            foo2 = -x2 + y2 + d2
+            x = (foo1 - foo2) // 2
+            y = (foo1 + foo2 + 1) // 2 + 1
+            if 0 <= x < n and 0 <= y < n and np.all(np.abs(x - data[:, 0]) + np.abs(y - data[:, 1]) > data[:, 2]):
+                print(n * x + y)
 
 
 if __name__ == '__main__':
