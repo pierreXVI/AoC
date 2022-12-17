@@ -520,6 +520,62 @@ def day15():
                 print(n * x + y)
 
 
+def day16():
+    def djikstra(costs, start, end):
+        score = {x: np.inf for x in costs}
+        score[start] = 0
+        done = set()
+        hq = [(score[start], start), ]
+
+        while hq:
+            c, x = heapq.heappop(hq)
+            if x == end:
+                break
+            done.add(x)
+            for y in costs[x]:
+                if y not in done:
+                    val = c + costs[x][y]
+                    if val < score[y]:
+                        score[y] = val
+                        heapq.heappush(hq, (score[y], y))
+        return score[end]
+
+    with open(utils.get_input(YEAR, 16)) as inp:
+        cave = {}
+        for line in inp:
+            foo = re.search(r'Valve (\w+) has flow rate=(\d+); tunnels? leads? to valves? (.*)', line).groups()
+            cave[foo[0]] = (int(foo[1]), {bar: 1 for bar in foo[2].split(', ')})
+
+        for d in list(cave.keys()):
+            if cave[d][0] == 0 and len(cave[d][1]) == 2:
+                a, b = cave[d][1].keys()
+                cave[a][1][b] = cave[b][1][a] = cave[d][1][a] + cave[d][1][b]
+                del cave[a][1][d], cave[b][1][d], cave[d]
+
+        for d in cave:
+            for dd in cave:
+                if dd not in cave[d][1] and dd != d:
+                    cave[dd][1][d] = cave[d][1][dd] = djikstra({d: cave[d][1] for d in cave}, d, dd)
+
+        def recursive_shit(rest, c, n):
+            if n <= 0:
+                return 0
+            return n * cave[c][0] + max((recursive_shit(rest.difference({v}), v, n - cave[c][1][v] - 1) for v in rest),
+                                        default=0)
+
+        print(recursive_shit({d for d in cave if cave[d][0]}, 'AA', 30))
+
+        def explore(rest, c1, c2, n1, n2):
+            if n1 <= 0:
+                return 0
+
+            return n1 * cave[c1][0] + max(recursive_shit(rest, c2, n2), max(
+                (explore(rest.difference({v}), v, c2, n1 - cave[c1][1][v] - 1, n2) for v in rest),
+                default=0))
+
+        print(explore({d for d in cave if cave[d][0]}, 'AA', 'AA', 26, 26))
+
+
 if __name__ == '__main__':
-    day15()
+    day16()
 
