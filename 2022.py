@@ -332,5 +332,80 @@ def day11():
         print(np.prod(sorted(scores.values())[-2:]))
 
 
+def day17():
+    class Rock:
+        rocks = [
+            np.array([[0, 1, 2, 3], [0, 0, 0, 0]], dtype=int),
+            np.array([[1, 0, 1, 2, 1], [0, 1, 1, 1, 2]], dtype=int),
+            np.array([[0, 1, 2, 2, 2], [0, 0, 0, 1, 2]], dtype=int),
+            np.array([[0, 0, 0, 0], [0, 1, 2, 3]], dtype=int),
+            np.array([[0, 0, 1, 1], [0, 1, 0, 1]], dtype=int),
+        ]
+
+        def __init__(self, i, x0, y0):
+            self.x = Rock.rocks[i][0] + x0
+            self.y = Rock.rocks[i][1] + y0
+
+        def move(self, grid, dx):
+            if np.all(0 <= self.x + dx) and np.all(self.x + dx < grid.shape[0]) and not self.intersect(grid, dx=dx):
+                self.x += dx
+            if np.all(0 < self.y) and not self.intersect(grid, dy=-1):
+                self.y -= 1
+                return True
+            return False
+
+        def intersect(self, grid, dx=0, dy=0):
+            for x, y in zip(self.x + dx, self.y + dy):
+                if grid[x, y]:
+                    return True
+            return False
+
+        def apply(self, grid):
+            for x, y in zip(self.x, self.y):
+                grid[x, y] = True
+            return np.max(self.y) + 1
+
+    with open(utils.get_input(YEAR, 17)) as inp:
+        wind = inp.readline().strip()
+
+    def simulate(n_iter):
+        grid = np.zeros((7, 2 * n_iter), dtype=bool)
+        n = 0
+        i_wind = -1
+        for i_rocks in range(n_iter):
+            rock = Rock(i_rocks % 5, 2, n + 3)
+            while True:
+                i_wind += 1
+                if not rock.move(grid, 1 if wind[i_wind % len(wind)] == '>' else -1):
+                    n = max(n, rock.apply(grid))
+                    break
+        # print('\n'.join([''.join(['#' if x else ' ' for x in g]) for g in grid[:, ::-1].T]))
+        return n
+
+    def find_cycle(n_iter=3000):
+        grid = np.zeros((7, 2 * n_iter), dtype=bool)
+        n = 0
+        i_wind = -1
+        visited = []
+        for i_rocks in range(n_iter):
+            rock = Rock(i_rocks % 5, 2, n + 3)
+            while True:
+                i_wind += 1
+                if not rock.move(grid, 1 if wind[i_wind % len(wind)] == '>' else -1):
+                    n = max(n, rock.apply(grid))
+                    entry = (i_rocks % 5, i_wind % len(wind), *(grid[:, n - 20:n].flatten()))
+                    if entry in visited:
+                        n = visited.index(entry) + 1
+                        return i_rocks - n, n
+                    visited.insert(0, entry)
+                    break
+
+    print(simulate(2022))
+
+    start, period = find_cycle()
+    a, b = divmod(1000000000000 - start, period)
+    print(a * (simulate(start + period) - simulate(start)) + simulate(start + b))
+
+
 if __name__ == '__main__':
-    day11()
+    day17()
