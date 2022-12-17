@@ -94,5 +94,10 @@ def day4():
         print(count2)
 
 
+def day5():
+    with open(utils.get_input(YEAR, 5)) as inp:
+        pass
+
+
 if __name__ == '__main__':
-    day4()
+    day5()

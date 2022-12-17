@@ -1,7 +1,9 @@
-import numpy as np
-import re
-import utils
 import collections
+import re
+
+import numpy as np
+
+import utils
 
 YEAR = 2020
 np.set_printoptions(linewidth=300)
@@ -260,5 +262,33 @@ def day10():
     print(len(diff[diff == 1]) * len(diff[diff == 3]))
 
 
+def day13():
+    def euclide(a, b):
+        r, u, v, rp, up, vp = a, 1, 0, b, 0, 1
+        while rp != 0:
+            q = r // rp
+            r, u, v, rp, up, vp = rp, up, vp, r - q * rp, u - q * up, v - q * vp
+        return r, u, v
+
+    with open(utils.get_input(YEAR, 13)) as inp:
+        start = int(inp.readline())
+        line = inp.readline().split(',')
+        data = np.array([int(d) for d in line if d != 'x'])
+        rank = np.array([i for i in range(len(line)) if line[i] != 'x'])
+
+    p = np.prod(data)
+    x = 0
+    for i in range(len(data)):
+        n = p // data[i]
+        x -= rank[i] * euclide(n, data[i])[1] * n
+    while x < 0:
+        x += p
+    while True:
+        if x - p < 0:
+            break
+        x -= p
+    print(x)
+
+
 if __name__ == '__main__':
-    day10()
+    day13()

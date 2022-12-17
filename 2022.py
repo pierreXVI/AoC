@@ -1,3 +1,7 @@
+import functools
+import heapq
+import json
+import re
 import collections
 
 import numpy as np
@@ -330,6 +334,248 @@ def day11():
                         monkeys[monkeys[m]['test'][1]]['items'].append(level)
                 monkeys[m]['items'] = []
         print(np.prod(sorted(scores.values())[-2:]))
+
+
+def day12():
+    def djikstra(costs, start, end):
+        score = {(x, y): np.inf for x in range(costs.shape[0]) for y in range(costs.shape[1])}
+        score[start] = 0
+        done = set()
+        hq = [(score[start], start[0], start[1]), ]
+
+        while hq:
+            c, x, y = heapq.heappop(hq)
+            # assert c == score[x, y]
+            # assert (x, y) not in done
+            if (x, y) == end:
+                break
+            done.add((x, y))
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                if 0 <= x + dx < costs.shape[0] and 0 <= y + dy < costs.shape[1] and (x + dx, y + dy) not in done:
+                    val = c + 1
+                    if val < score[x + dx, y + dy] and costs[x + dx, y + dy] <= costs[x, y] + 1:
+                        score[x + dx, y + dy] = val
+                        heapq.heappush(hq, (score[x + dx, y + dy], x + dx, y + dy))
+
+        return score[end]
+
+    def reverse_djikstra(costs, start, end):
+        score = {(x, y): np.inf for x in range(costs.shape[0]) for y in range(costs.shape[1])}
+        score[start] = 0
+        done = set()
+        hq = [(score[start], start[0], start[1]), ]
+
+        while hq:
+            c, x, y = heapq.heappop(hq)
+            # assert c == score[x, y]
+            # assert (x, y) not in done
+            if costs[x, y] == end:
+                break
+            done.add((x, y))
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                if 0 <= x + dx < costs.shape[0] and 0 <= y + dy < costs.shape[1] and (x + dx, y + dy) not in done:
+                    val = c + 1
+                    if val < score[x + dx, y + dy] and costs[x + dx, y + dy] <= costs[x, y] + 1:
+                        score[x + dx, y + dy] = val
+                        heapq.heappush(hq, (score[x + dx, y + dy], x + dx, y + dy))
+
+        return score[end]
+
+    with open(utils.get_input(YEAR, 12)) as inp:
+        grid = np.array([[ord(d) for d in line[:-1]] for line in inp])
+        xs, ys = np.argwhere(grid == ord('S'))[0]
+        xe, ye = np.argwhere(grid == ord('E'))[0]
+        grid[xs, ys] = ord('a')
+        grid[xe, ye] = ord('z')
+
+        print(djikstra(grid, (xs, ys), (xe, ye)))
+
+        foo = np.inf
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                if grid[i, j] == ord('a'):
+                    foo = min(foo, djikstra(grid, (i, j), (xe, ye)))
+        print(foo)
+
+
+def day13():
+    def compare(l1, l2):
+        for x1, x2 in zip(l1, l2):
+            if isinstance(x1, int) and isinstance(x2, int):
+                if x1 != x2:
+                    return 2 * (x1 < x2) - 1
+            else:
+                x1 = x1 if isinstance(x1, list) else [x1]
+                x2 = x2 if isinstance(x2, list) else [x2]
+                res = compare(x1, x2)
+                if res:
+                    return res
+        return 1 if len(l1) < len(l2) else -1 if len(l2) < len(l1) else 0
+
+    with open(utils.get_input(YEAR, 13)) as inp:
+        count = n = 0
+        packets = [[[2]], [[6]]]
+        while True:
+            p1 = json.loads(inp.readline())
+            p2 = json.loads(inp.readline())
+            n += 1
+            if compare(p1, p2) == 1:
+                count += n
+            packets.append(p1)
+            packets.append(p2)
+            if not inp.readline():
+                break
+        print(count)
+        packets.sort(key=functools.cmp_to_key(compare), reverse=True)
+        print((packets.index([[2]]) + 1) * (packets.index([[6]]) + 1))
+
+
+def day14():
+    def fall():
+        x, y = 500, 0
+        while True:
+            move = False
+            for dx in (0, -1, 1):
+                if (0 <= x + dx < grid.shape[0]) and grid[x + dx, y + 1] == 0:
+                    x += dx
+                    y += 1
+                    move = True
+                    break
+            if y == grid.shape[1] - 1:
+                return True
+            if not move:
+                grid[x, y] = 2
+                return y == 0
+
+    with open(utils.get_input(YEAR, 14)) as inp:
+        grid = np.zeros((0, 0), dtype=int)
+        for line in inp:
+            points = np.array([[int(d) for d in p.split(',')] for p in line.split('->')])
+            new_x, new_y = np.max(points, axis=0)
+            if new_x >= grid.shape[0] or new_y >= grid.shape[1]:
+                new_grid = np.zeros((max(new_x + 1, grid.shape[0]), max(new_y + 1, grid.shape[1])), dtype=int)
+                new_grid[:grid.shape[0], :grid.shape[1]] = grid
+                grid = new_grid
+            for i in range(points.shape[0] - 1):
+                x1, x2 = sorted([points[i, 0], points[i + 1, 0]])
+                y1, y2 = sorted([points[i, 1], points[i + 1, 1]])
+                grid[x1:x2 + 1, y1:y2 + 1] = 1
+
+        n = 0
+        while not fall():
+            n += 1
+        print(n)
+
+        nx, ny = grid.shape
+        points = np.array([[500 - ny - 1, ny + 1], [500 + ny + 1, ny + 1]])
+        new_x, new_y = np.max(points, axis=0)
+        if new_x >= grid.shape[0] or new_y >= grid.shape[1]:
+            new_grid = np.zeros((max(new_x + 1, grid.shape[0]), max(new_y + 1, grid.shape[1])), dtype=int)
+            new_grid[:grid.shape[0], :grid.shape[1]] = grid
+            grid = new_grid
+        for i in range(points.shape[0] - 1):
+            x1, x2 = sorted([points[i, 0], points[i + 1, 0]])
+            y1, y2 = sorted([points[i, 1], points[i + 1, 1]])
+            grid[x1:x2 + 1, y1:y2 + 1] = 1
+
+        n = grid.shape[1] ** 2
+        grid[grid == 2] = 0
+        for j in range(1, grid.shape[1]):
+            for i in range(500 - j, 500 + j + 1):
+                if grid[i, j] == 1 or np.sum(grid[i - 1:i + 2, j - 1]) == 3:
+                    grid[i, j] = 1
+                    n -= 1
+        print(n)
+
+
+def day15():
+    with open(utils.get_input(YEAR, 15)) as inp:
+        data = np.array([list(map(int, re.match(
+            r'Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)', line).groups()
+                                  )) for line in inp])
+
+    intervals = []
+    beacons = set()
+    y = 2000000
+    for xs, ys, xb, yb in data:
+        if yb == y:
+            beacons.add(xb)
+        d = abs(xb - xs) + abs(yb - ys) - abs(y - ys)
+        if d > 0:
+            intervals.append([xs - d, xs + d])
+    intervals.sort()
+    x, y = intervals[0]
+    for bar in intervals[1:]:
+        y = max(y, bar[1])
+    print(y - x + 1 - len(beacons))
+
+    n = 4000000
+    data[:, 2] = np.abs(data[:, 2] - data[:, 0]) + np.abs(data[:, 3] - data[:, 1])
+    data = data[:, :3]
+    for x1, y1, d1 in data:
+        foo1 = x1 + y1 + d1
+        for x2, y2, d2 in data:
+            foo2 = -x2 + y2 + d2
+            x = (foo1 - foo2) // 2
+            y = (foo1 + foo2 + 1) // 2 + 1
+            if 0 <= x < n and 0 <= y < n and np.all(np.abs(x - data[:, 0]) + np.abs(y - data[:, 1]) > data[:, 2]):
+                print(n * x + y)
+
+
+def day16():
+    def djikstra(costs, start, end):
+        score = {x: np.inf for x in costs}
+        score[start] = 0
+        done = set()
+        hq = [(score[start], start), ]
+
+        while hq:
+            c, x = heapq.heappop(hq)
+            if x == end:
+                break
+            done.add(x)
+            for y in costs[x]:
+                if y not in done:
+                    val = c + costs[x][y]
+                    if val < score[y]:
+                        score[y] = val
+                        heapq.heappush(hq, (score[y], y))
+        return score[end]
+
+    with open(utils.get_input(YEAR, 16)) as inp:
+        cave = {}
+        for line in inp:
+            foo = re.search(r'Valve (\w+) has flow rate=(\d+); tunnels? leads? to valves? (.*)', line).groups()
+            cave[foo[0]] = (int(foo[1]), {bar: 1 for bar in foo[2].split(', ')})
+
+        for d in list(cave.keys()):
+            if cave[d][0] == 0 and len(cave[d][1]) == 2:
+                a, b = cave[d][1].keys()
+                cave[a][1][b] = cave[b][1][a] = cave[d][1][a] + cave[d][1][b]
+                del cave[a][1][d], cave[b][1][d], cave[d]
+
+        for d in cave:
+            for dd in cave:
+                if dd not in cave[d][1] and dd != d:
+                    cave[dd][1][d] = cave[d][1][dd] = djikstra({d: cave[d][1] for d in cave}, d, dd)
+
+        def recursive_shit(rest, c, n):
+            if n <= 0:
+                return 0
+            return n * cave[c][0] + max((recursive_shit(rest.difference({v}), v, n - cave[c][1][v] - 1) for v in rest),
+                                        default=0)
+
+        print(recursive_shit({d for d in cave if cave[d][0]}, 'AA', 30))
+
+        def explore(rest, c1, c2, n1, n2):
+            if n1 <= 0:
+                return 0
+
+            return n1 * cave[c1][0] + max(recursive_shit(rest, c2, n2), max(
+                (explore(rest.difference({v}), v, c2, n1 - cave[c1][1][v] - 1, n2) for v in rest),
+                default=0))
+
+        print(explore({d for d in cave if cave[d][0]}, 'AA', 'AA', 26, 26))
 
 
 def day17():

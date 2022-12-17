@@ -10,7 +10,8 @@ SESSION = "53616c7465645f5f48548cc6057fe5f4163a1a169b2ffd2ef3e66137472d1dec" \
 
 def _download_input(year, day):
     os.makedirs(os.path.join(ROOT, year), exist_ok=True)
-    response = requests.get(URL.format(year, day), cookies={'session': SESSION})
+    response = requests.get(URL.format(year, day), cookies={'session': SESSION},
+                            proxies={'http': 'http://proxy.onera:80', 'https': 'http://proxy.onera:80'})
     if not response:
         raise ConnectionError("Cannot get input from url \"{0}\"".format(response.url))
     path = os.path.join(ROOT, year, day)

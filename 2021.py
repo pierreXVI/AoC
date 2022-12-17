@@ -573,5 +573,118 @@ def day17():
     print(count)
 
 
+def day18():
+    class SnailfishNumber:
+        def __init__(self, pair, lvl=0):
+            if type(pair) == int:
+                self.left = self.right = pair
+                self.regular = True
+            else:
+                self.left = pair[0] if type(pair[0]) is SnailfishNumber else SnailfishNumber(pair[0], lvl + 1)
+                self.right = pair[1] if type(pair[1]) is SnailfishNumber else SnailfishNumber(pair[1], lvl + 1)
+                self.regular = False
+
+            self.lvl = lvl
+            if self.lvl == 0:
+                self.update_lvl()
+                self.reduce()
+
+        def update_lvl(self, lvl=0):
+            self.lvl = lvl
+            if self.regular:
+                return
+            self.left.update_lvl(self.lvl + 1)
+            self.right.update_lvl(self.lvl + 1)
+
+        def split(self):
+            if self.regular:
+                if self.left >= 10:
+                    self.left = SnailfishNumber(self.left // 2, self.lvl + 1)
+                    self.right = SnailfishNumber(self.right - self.right // 2, self.lvl + 1)
+                    self.regular = False
+                    return True
+                return False
+            else:
+                return self.left.split() or self.right.split()
+
+        def explode(self):
+            if self.regular:
+                return ()
+
+            if self.lvl > 3:
+                my_explode = (self.left, self.right)
+                self.left = self.right = 0
+                self.regular = True
+                return my_explode
+
+            explode_l = self.left.explode()
+            if explode_l:
+                self.right.first_add(explode_l[1], True)
+                return explode_l[0], 0
+            explode_r = self.right.explode()
+            if explode_r:
+                self.left.first_add(explode_r[0], False)
+                return 0, explode_r[1]
+
+            return ()
+
+        def reduce(self):
+            while self.explode() or self.split():
+                pass
+
+        def first_add(self, val, left):
+            if self.regular:
+                self.left = self.right = self.left + val
+            else:
+                which = self.left if left else self.right
+                which.first_add(val, left)
+
+        def magnitude(self):
+            if self.regular:
+                return self.left
+            return 3 * self.left.magnitude() + 2 * self.right.magnitude()
+
+        def __add__(self, other):
+            if self.regular and type(other) == int:
+                return self.left + other
+            return SnailfishNumber([self.copy(), other.copy()])
+
+        def __radd__(self, other):
+            return self + other
+
+        def __str__(self):
+            if self.regular:
+                return str(self.left)
+            else:
+                return '[' + str(self.left) + ',' + str(self.right) + ']'
+
+        def to_list(self):
+            if self.regular:
+                return self.left
+            return [self.left.to_list(), self.right.to_list()]
+
+        def copy(self):
+            return SnailfishNumber(self.to_list())
+
+    numbers = []
+    with open(utils.get_input(YEAR, 18)) as inp:
+        for line in inp:
+            numbers.append(SnailfishNumber(eval(line[:-1])))
+
+    total_sum = numbers[0].copy()
+    for i in range(1, len(numbers)):
+        total_sum = total_sum + numbers[i]
+    print(total_sum.magnitude())
+
+    best = 0
+    for i in range(len(numbers)):
+        for j in range(len(numbers)):
+            if i != j:
+                mag = (numbers[i] + numbers[j]).magnitude()
+                if mag > best:
+                    best = mag
+    print(best)
+
+
 if __name__ == '__main__':
-    day17()
+    day18()

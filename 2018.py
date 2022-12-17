@@ -1,9 +1,9 @@
 import collections
+import re
 
 import numpy as np
 
 import utils
-import re
 
 np.set_printoptions(linewidth=300)
 
@@ -121,5 +121,75 @@ def day4():
         print(sleepy2 * np.argmax(asleep[sleepy2]))
 
 
+def day5():
+    def reduce_polymer(polymer):
+        purged = ['', ]
+        for c in polymer:
+            if c.lower() == purged[-1].lower() and c != purged[-1]:
+                purged.pop()
+            else:
+                purged.append(c)
+        return ''.join(purged)
+
+    with open(utils.get_input(YEAR, 5)) as inp:
+        data = inp.readline().strip()
+        print(len(reduce_polymer(data)))
+
+        best = np.inf
+        for d in set(data.upper()):
+            best = min(best, len(reduce_polymer(data.replace(d, '').replace(d.lower(), ''))))
+        print(best)
+
+
+def day6():
+    with open(utils.get_input(YEAR, 6)) as inp:
+        points = np.array([[int(d) for d in line.split(',')] for line in inp])
+        min_x, min_y = np.min(points, axis=0)
+        points -= [min_x, min_y]
+        max_x, max_y = np.max(points, axis=0)
+
+        grid = np.zeros((max_x + 1, max_y + 1), dtype=int)
+        for n in range(len(points)):
+            grid[points[n, 0], points[n, 1]] = n + 1
+
+        change = True
+        while change:
+            new_grid = np.zeros_like(grid)
+            change = False
+            for i in range(grid.shape[0]):
+                for j in range(grid.shape[1]):
+                    if grid[i, j] == 0:
+                        values = {grid[i, j], }
+                        if i > 0:
+                            values.add(grid[i - 1, j])
+                        if j > 0:
+                            values.add(grid[i, j - 1])
+                        if i < grid.shape[0] - 1:
+                            values.add(grid[i + 1, j])
+                        if j < grid.shape[1] - 1:
+                            values.add(grid[i, j + 1])
+                        if len(values) == 2:
+                            new_grid[i, j] = max(values)
+                            change = True
+                    else:
+                        new_grid[i, j] = grid[i, j]
+            grid = new_grid
+
+        borders = np.unique(np.concatenate((grid[0], grid[-1], grid[:, 0], grid[:, -1])))
+        counts = dict(zip(*np.unique(grid, return_counts=True)))
+
+        for n in sorted(counts, key=lambda val: counts[val], reverse=True):
+            if n not in borders:
+                print(counts[n])
+                break
+
+        grid = np.zeros((max_x + 1, max_y + 1), dtype=int)
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                for p in points:
+                    grid[i, j] += abs(i - p[0]) + abs(j - p[1])
+        print(np.sum(grid.T < 10000))
+
+
 if __name__ == '__main__':
-    day4()
+    day6()
