@@ -653,5 +653,58 @@ def day17():
     print(a * (simulate(start + period) - simulate(start)) + simulate(start + b))
 
 
+def day18():
+    with open(utils.get_input(YEAR, 18)) as inp:
+        grid = np.zeros((0, 0, 0), dtype=int)
+        for line in inp:
+            x, y, z = [int(d) for d in line.split(',')]
+            if grid.shape[0] <= x or grid.shape[1] <= y or grid.shape[2] <= z:
+                new_grid = np.zeros((max(x + 1, grid.shape[0]), max(y + 1, grid.shape[1]), max(z + 1, grid.shape[2])),
+                                    dtype=int)
+                new_grid[:grid.shape[0], :grid.shape[1], :grid.shape[2]] = grid
+                grid = new_grid
+            grid[x, y, z] = 1
+        print(
+            np.sum(abs(np.diff(grid, axis=0))) + np.sum(abs(np.diff(grid, axis=1))) + np.sum(abs(np.diff(grid, axis=2)))
+            + np.sum(grid[0, :, :] + grid[-1, :, :])
+            + np.sum(grid[:, 0, :] + grid[:, -1, :])
+            + np.sum(grid[:, :, 0] + grid[:, :, -1])
+        )
+
+        fill = np.ones_like(grid, dtype=int)
+        to_visit = set()
+        for x in range(grid.shape[0]):
+            for y in range(grid.shape[1]):
+                for z in range(grid.shape[2]):
+                    to_visit.add((x, y, 0))
+                    to_visit.add((x, y, grid.shape[2] - 1))
+                    to_visit.add((x, 0, z))
+                    to_visit.add((x, grid.shape[1] - 1, z))
+                    to_visit.add((0, y, z))
+                    to_visit.add((grid.shape[0] - 1, y, z))
+        while to_visit:
+            x, y, z = to_visit.pop()
+            if not grid[x, y, z] and fill[x, y, z]:
+                fill[x, y, z] = 0
+                if 0 <= x + 1 < grid.shape[0]:
+                    to_visit.add((x + 1, y, z))
+                if 0 <= x - 1 < grid.shape[0]:
+                    to_visit.add((x - 1, y, z))
+                if 0 <= y + 1 < grid.shape[1]:
+                    to_visit.add((x, y + 1, z))
+                if 0 <= x - 1 < grid.shape[1]:
+                    to_visit.add((x, y - 1, z))
+                if 0 <= z + 1 < grid.shape[2]:
+                    to_visit.add((x, y, z + 1))
+                if 0 <= z - 1 < grid.shape[2]:
+                    to_visit.add((x, y, z - 1))
+        print(
+            np.sum(abs(np.diff(fill, axis=0))) + np.sum(abs(np.diff(fill, axis=1))) + np.sum(abs(np.diff(fill, axis=2)))
+            + np.sum(fill[0, :, :] + fill[-1, :, :])
+            + np.sum(fill[:, 0, :] + fill[:, -1, :])
+            + np.sum(fill[:, :, 0] + fill[:, :, -1])
+        )
+
+
 if __name__ == '__main__':
-    day17()
+    day18()
