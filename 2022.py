@@ -1,8 +1,8 @@
+import collections
 import functools
 import heapq
 import json
 import re
-import collections
 
 import numpy as np
 
@@ -742,5 +742,34 @@ def day19():
             break
 
 
+def day20():
+    def decode(msg, key, repeat):
+        n = len(msg)
+        msg *= key
+        indices = np.arange(n, dtype=int)
+
+        for _ in range(repeat):
+            for i in range(n):
+                k = (indices[i] + data[i]) % (n - 1)
+                # Not needed as the answer use position in the circular list relative to 0 but needed to match example
+                # if k == 0 and data[i] < 0:
+                #     k = n - 1
+                if k > indices[i]:
+                    indices[np.logical_and(indices[i] < indices, indices <= k)] -= 1
+                elif k < indices[i]:
+                    indices[np.logical_and(k <= indices, indices < indices[i])] += 1
+                indices[i] = k
+        res = np.zeros(n, dtype=int)
+        for i in range(n):
+            res[indices[i]] = data[i]
+        i0 = np.where(res == 0)[0]
+        return (res[(i0 + 1000) % n] + res[(i0 + 2000) % n] + res[(i0 + 3000) % n])[0]
+
+    with open(utils.get_input(YEAR, 20)) as inp:
+        data = np.array([int(line) for line in inp], dtype=int)
+        print(decode(data, 1, 1))
+        print(decode(data, 811589153, 10))
+
+
 if __name__ == '__main__':
-    day19()
+    day20()
