@@ -708,6 +708,7 @@ def day18():
 
 def day19():
     with open(utils.get_input(YEAR, 19)) as inp:
+        result = 0
         for line in inp:
             data = [int(d) for d in re.findall(r'(\d+)', line)]
             costs = np.array([[data[1], 0, 0, 0],
@@ -720,7 +721,7 @@ def day19():
 
             best = 0
             queue = collections.deque()
-            queue.append((1, 0, 0, 0, 0, 0, 0, 0, 24))
+            queue.append((1, 0, 0, 0, 0, 0, 0, 0, 32))
             while queue:
                 state = queue.pop()
                 workers = np.array(state[:4])
@@ -729,17 +730,19 @@ def day19():
 
                 if n == 0:
                     best = max(best, resources[3])
-                    continue
-                if resources[3] + n * (workers[3] + (n - 1) / 2) < best:
                     print(best)
+                    continue
+                if resources[3] + n * workers[3] + n * (n - 1) / 2 <= best:
                     continue
 
                 queue.append((*workers, *(resources + workers), n - 1))
                 for i in range(4):
                     if workers[i] < maximums[i] and np.all(costs[i] <= resources):
                         queue.append((*(workers + eye[i]), *(resources + workers - costs[i]), n - 1))
-            print(best)
+            result += data[0] * best
+            print(result, data[0], best)
             break
+        print(result)
 
 
 def day20():
@@ -772,4 +775,4 @@ def day20():
 
 
 if __name__ == '__main__':
-    day20()
+    day19()
