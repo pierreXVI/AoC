@@ -774,5 +774,87 @@ def day20():
         print(decode(data, 811589153, 10))
 
 
+def day21():
+    def forward(instructions):
+        rest = {}
+        values = {}
+        for line in instructions:
+            if match := re.match(r'(\w{4})= (\d+)', line):
+                values[match.groups()[0]] = int(match.groups()[1])
+            else:
+                match = re.match(r'(\w{4})= (\w{4}) (.*) (\w{4})', line)
+                rest[match.groups()[0]] = [match.groups()[1], match.groups()[2], match.groups()[3]]
+        while rest:
+            advance = False
+            for v in list(rest.keys()):
+                if rest[v][0] in values:
+                    rest[v][0] = values[rest[v][0]]
+                if rest[v][2] in values:
+                    rest[v][2] = values[rest[v][2]]
+                if isinstance(rest[v][0], (int, float)) and isinstance(rest[v][2], (int, float)):
+                    if rest[v][1] == '+':
+                        values[v] = rest[v][0] + rest[v][2]
+                    elif rest[v][1] == '*':
+                        values[v] = rest[v][0] * rest[v][2]
+                    elif rest[v][1] == '-':
+                        values[v] = rest[v][0] - rest[v][2]
+                    else:
+                        values[v] = rest[v][0] / rest[v][2]
+                    del rest[v]
+                    advance = True
+            if not advance:
+                return rest
+        return int(values['root'])
+
+    def backward(rest):
+        a, b = rest['root'][0], rest['root'][2]
+        if b in rest:
+            a, b = b, a
+
+        while True:
+            if a == 'humn':
+                return int(b)
+            v1, oper, v2 = rest[a]
+            if oper == '+':
+                if v1 in rest:
+                    a = v1
+                    b = b - v2
+                else:
+                    a = v2
+                    b = b - v1
+            elif oper == '-':
+                if v1 in rest:
+                    a = v1
+                    b = b + v2
+                else:
+                    b = v1 - b
+                    a = v2
+            elif oper == '*':
+                if v1 in rest:
+                    a = v1
+                    b = b / v2
+                else:
+                    a = v2
+                    b = b / v1
+            elif oper == '/':
+                if v1 in rest:
+                    a = v1
+                    b = b * v2
+                else:
+                    a = v2
+                    b = v1 / b
+
+    with open(utils.get_input(YEAR, 21)) as inp:
+        data = [line.strip().replace(':', '=') for line in inp]
+        print(forward(data))
+
+        for i in range(len(data)):
+            if data[i].startswith('root'):
+                data[i] = data[i].replace('+', '==').replace('*', '==').replace('-', '==').replace('/', '==')
+            if data[i].startswith('humn'):
+                data[i] = 'humn= humn + humn'
+        print(backward(forward(data)))
+
+
 if __name__ == '__main__':
-    day19()
+    day21()
