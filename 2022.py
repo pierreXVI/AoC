@@ -707,42 +707,53 @@ def day18():
 
 
 def day19():
+    def damn_this_was_hard(blueprint, n_max):
+        costs = np.array([[blueprint[1], 0, 0, 0],
+                          [blueprint[2], 0, 0, 0],
+                          [blueprint[3], blueprint[4], 0, 0],
+                          [blueprint[5], 0, blueprint[6], 0]])
+        eye = np.eye(4, dtype=int)
+        maximums = np.max(costs.astype(float), axis=0)
+        maximums[3] = np.inf
+
+        best = 0
+        queue = collections.deque()
+        queue.append((1, 0, 0, 0, 0, 0, 0, 0, n_max))
+        memo = set()
+        while queue:
+            state = queue.pop()
+            if state in memo:
+                continue
+            memo.add(state)
+            workers = np.array(state[:4])
+            resources = np.array(state[4:8])
+            n = state[8]
+
+            if n == 0:
+                best = max(best, resources[3])
+                continue
+            if resources[3] + n * workers[3] + n * (n - 1) / 2 <= best:
+                continue
+
+            queue.append((*workers, *(resources + n * workers), 0))
+            for i in range(4):
+                if workers[i] < maximums[i] and np.all(costs[i] <= resources + n * workers):
+                    j = int(max(1, *np.ceil((costs[i] - resources) / workers) + 1))
+                    new_state = (*(workers + eye[i]), *(resources + j * workers - costs[i]), n - j)
+                    queue.append(new_state)
+        return best
+
     with open(utils.get_input(YEAR, 19)) as inp:
+        blueprints = [[int(d) for d in re.findall(r'(\d+)', line)] for line in inp]
+
         result = 0
-        for line in inp:
-            data = [int(d) for d in re.findall(r'(\d+)', line)]
-            costs = np.array([[data[1], 0, 0, 0],
-                              [data[2], 0, 0, 0],
-                              [data[3], data[4], 0, 0],
-                              [data[5], 0, data[6], 0]])
-            eye = np.eye(4, dtype=int)
-            maximums = np.max(costs.astype(float), axis=0)
-            maximums[3] = np.inf
-
-            best = 0
-            queue = collections.deque()
-            queue.append((1, 0, 0, 0, 0, 0, 0, 0, 32))
-            while queue:
-                state = queue.pop()
-                workers = np.array(state[:4])
-                resources = np.array(state[4:8])
-                n = state[8]
-
-                if n == 0:
-                    best = max(best, resources[3])
-                    print(best)
-                    continue
-                if resources[3] + n * workers[3] + n * (n - 1) / 2 <= best:
-                    continue
-
-                queue.append((*workers, *(resources + workers), n - 1))
-                for i in range(4):
-                    if workers[i] < maximums[i] and np.all(costs[i] <= resources):
-                        queue.append((*(workers + eye[i]), *(resources + workers - costs[i]), n - 1))
-            result += data[0] * best
-            print(result, data[0], best)
-            break
+        for data in blueprints:
+            result += data[0] * damn_this_was_hard(data, 24)
         print(result)
+
+        print(damn_this_was_hard(blueprints[0], 32)
+              * damn_this_was_hard(blueprints[1], 32)
+              * damn_this_was_hard(blueprints[2], 32))
 
 
 def day20():
@@ -857,4 +868,4 @@ def day21():
 
 
 if __name__ == '__main__':
-    day21()
+    day19()
