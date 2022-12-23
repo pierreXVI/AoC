@@ -867,5 +867,127 @@ def day21():
         print(backward(forward(data)))
 
 
+def day22():
+    with open(utils.get_input(YEAR, 22)) as inp:
+        data = []
+        while True:
+            line = inp.readline()
+            if line == '\n':
+                break
+            data.append(line[:-1])
+        grid = np.zeros((len(data), max(len(d) for d in data)), dtype=int)
+        for i in range(len(data)):
+            for j in range(len(data[i])):
+                grid[i, j] = 1 if data[i][j] == '.' else '-1' if data[i][j] == '#' else 0
+        grid = grid.T
+        nx, ny = grid.shape
+
+        data = inp.readline()
+        moves = []
+        rotations = []
+        i0 = 0
+        for i in range(len(data)):
+            if data[i] in ('L', 'R'):
+                moves.append(int(data[i0:i]))
+                rotations.append(data[i])
+                i0 = i + 1
+        moves.append(int(data[i0:]))
+        rotations.append('')
+
+        def move1(loc, a):
+            new_loc = int(loc.real + a.real) % nx + 1j * (int(loc.imag + a.imag) % ny)
+            while grid[int(new_loc.real), int(new_loc.imag)] == 0:
+                new_loc = int(new_loc.real + a.real) % nx + 1j * (int(new_loc.imag + a.imag) % ny)
+            if grid[int(new_loc.real), int(new_loc.imag)] == 1:
+                loc = new_loc
+            return loc
+
+        def move2(loc, a):
+            new_loc = int(loc.real + a.real) + 1j * int(loc.imag + a.imag)
+            new_a = a
+            if new_loc.real == 49 and 0 <= new_loc.imag < 50:
+                new_loc = 0 + 1j * (149 - new_loc.imag)
+                new_a = 1
+            elif new_loc.real == -1 and 100 <= new_loc.imag < 150:
+                new_loc = 50 + 1j * (149 - new_loc.imag)
+                new_a = 1
+
+            elif 50 <= new_loc.real < 100 and new_loc.imag == -1:
+                new_loc = 0 + 1j * (100 + new_loc.real)
+                new_a = 1
+            elif new_loc.real == -1 and 150 <= new_loc.imag < 200:
+                new_loc = (new_loc.imag - 100) + 1j * 0
+                new_a = 1j
+
+            elif new_loc.real == 49 and 50 <= new_loc.imag < 100:
+                new_loc = (new_loc.imag - 50) + 1j * 100
+                new_a = 1j
+            elif 0 <= new_loc.real < 50 and new_loc.imag == 99:
+                new_loc = 50 + 1j * (new_loc.real + 50)
+                new_a = 1
+
+            elif new_loc.real == 50 and 150 <= new_loc.imag < 200:
+                new_loc = (new_loc.imag - 100) + 1j * 149
+                new_a = -1j
+            elif 50 <= new_loc.real < 100 and new_loc.imag == 150:
+                new_loc = 49 + 1j * (new_loc.real + 100)
+                new_a = -1
+
+            elif new_loc.real == 100 and 50 <= new_loc.imag < 100:
+                new_loc = (new_loc.imag + 50) + 1j * 49
+                new_a = -1j
+            elif 100 <= new_loc.real < 150 and new_loc.imag == 50:
+                new_loc = 99 + 1j * (new_loc.real - 50)
+                new_a = -1
+
+            elif new_loc.real == 150 and 0 <= new_loc.imag < 50:
+                new_loc = 99 + 1j * (149 - new_loc.imag)
+                new_a = -1
+            elif new_loc.real == 100 and 100 <= new_loc.imag < 150:
+                new_loc = 149 + 1j * (149 - new_loc.imag)
+                new_a = -1
+
+            elif 100 <= new_loc.real < 150 and new_loc.imag == -1:
+                new_loc = (new_loc.real - 100) + 1j * 199
+                new_a = -1j
+            elif 0 <= new_loc.real < 50 and new_loc.imag == 200:
+                new_loc = (new_loc.real + 100) + 1j * 0
+                new_a = 1j
+
+            if grid[int(new_loc.real), int(new_loc.imag)] == 1:
+                loc = new_loc
+                a = new_a
+            return loc, a
+
+        position = 0
+        angle = 1
+        while grid[int(position.real), int(position.imag)] == 0:
+            position = int(position.real + 1) + 1j * position.imag
+        for i in range(len(moves)):
+            for _ in range(moves[i]):
+                nposition = move1(position, angle)
+                if nposition == position:
+                    break
+                position = nposition
+            angle *= 1j if rotations[i] == 'R' else -1j if rotations[i] == 'L' else 1
+        score_facing = 0 if angle == 1 else 1 if angle == 1j else 2 if angle == -1 else 3
+        print(1000 * int(position.imag + 1) + 4 * int(position.real + 1) + score_facing)
+
+        position = 0
+        angle = 1
+        while grid[int(position.real), int(position.imag)] == 0:
+            position = int(position.real + 1) + 1j * position.imag
+        for i in range(len(moves)):
+            for _ in range(moves[i]):
+                nposition, nangle = move2(position, angle)
+                if nposition == position:
+                    break
+                position = nposition
+                angle = nangle
+            angle *= 1j if rotations[i] == 'R' else -1j if rotations[i] == 'L' else 1
+        score_facing = 0 if angle == 1 else 1 if angle == 1j else 2 if angle == -1 else 3
+        print(1000 * int(position.imag + 1) + 4 * int(position.real + 1) + score_facing)
+
+
 if __name__ == '__main__':
-    day19()
+    day22()
