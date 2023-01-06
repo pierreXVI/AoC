@@ -989,5 +989,52 @@ def day22():
         print(1000 * int(position.imag + 1) + 4 * int(position.real + 1) + score_facing)
 
 
+def day23():
+    def move(cur):
+        new = np.zeros_like(cur)
+        n = 0
+        for i in range(cur.shape[1]):
+            x, y = cur[:, i]
+            we = cur[:, np.logical_and(np.logical_and(x - 1 <= cur[0], cur[0] <= x + 1), cur[1] == y - 1)]
+            ea = cur[:, np.logical_and(np.logical_and(x - 1 <= cur[0], cur[0] <= x + 1), cur[1] == y + 1)]
+            no = cur[:, np.logical_and(cur[0] == x - 1, np.logical_and(y - 1 <= cur[1], cur[1] <= y + 1))]
+            so = cur[:, np.logical_and(cur[0] == x + 1, np.logical_and(y - 1 <= cur[1], cur[1] <= y + 1))]
+            if not (we.size or ea.size or no.size or so.size):
+                new[:, i] = x, y
+            else:
+                direction = (no, so, we, ea)
+                results = ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))
+                new[:, i] = x, y
+                for k in range(4):
+                    if not direction[(k + roll) % 4].size:
+                        new[:, i] = results[(k + roll) % 4]
+                        n += 1
+                        break
+        reset = []
+        for i in range(cur.shape[1]):
+            x, y = new[:, i]
+            if np.sum(np.logical_and(new[0] == x, new[1] == y)) > 1:
+                reset.append(i)
+        n -= len(reset)
+        for i in reset:
+            new[:, i] = cur[:, i]
+        return new, n
+
+    with open(utils.get_input(YEAR, 23)) as inp:
+        grid = np.array([[1 if c == '#' else 0 for c in line.strip()] for line in inp], dtype=int)
+        coords = np.array(np.where(grid), dtype=int)
+        roll = 0
+        for _ in range(10):
+            coords, _ = move(coords)
+            roll += 1
+        print(np.prod(np.max(coords, axis=1) - np.min(coords, axis=1) + 1) - coords.shape[1])
+        while True:
+            coords, n_moved = move(coords)
+            roll += 1
+            if not n_moved:
+                break
+        print(roll)
+
+
 if __name__ == '__main__':
-    day22()
+    day23()
