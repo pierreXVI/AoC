@@ -1,5 +1,6 @@
 import utils
 import hashlib
+import re
 
 YEAR = 2015
 
@@ -66,21 +67,21 @@ def day4():
         print(i)
 
 
-#
-#
-# def day5():
-#     nice_1 = nice_2 = 0
-#
-#     with open('input/5.txt') as inp:
-#         for line in inp:
-#             if not re.search(r'(ab|cd|pq|xy)', line) and re.search(r'(\w)\1', line) and len(
-#                     re.findall(r'[aeiou]', line)) > 2:
-#                 nice_1 += 1
-#             if re.search(r'(\w).\1', line) and re.search(r'(\w{2}).*?\1', line):
-#                 nice_2 += 1
-#
-#     print("There are {0} nice lines with rules 1 and {1} with rules 2".format(nice_1, nice_2))
-#
+def day5():
+
+    with open(utils.get_input(YEAR, 5)) as inp:
+        count1 = count2 = 0
+        for line in inp:
+            if not re.search(r'(ab|cd|pq|xy)', line) and re.search(r'(\w)\1', line) and len(
+                    re.findall(r'[aeiou]', line)) > 2:
+                count1 += 1
+            if re.search(r'(\w).\1', line) and re.search(r'(\w{2}).*?\1', line):
+                count2 += 1
+
+        print(count1)
+        print(count2)
+
+
 #
 # def day6(mode=1):
 #     # x, y = [], []
@@ -224,4 +225,4 @@ def day4():
 
 
 if __name__ == '__main__':
-    day4()
+    day5()

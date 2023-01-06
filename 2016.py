@@ -1,6 +1,10 @@
+import re
+
 import numpy as np
 import collections
 import utils
+import hashlib
+import collections
 
 YEAR = 2016
 
@@ -107,5 +111,133 @@ def day4():
         print(res2)
 
 
+def day5():
+    with open(utils.get_input(YEAR, 5)) as inp:
+        password1 = []
+        password2 = {}
+
+        door = inp.readline().strip()
+        md5 = hashlib.md5()
+        md5.update(door.encode('utf8'))
+        n = 0
+        while len(password2) < 8:
+            md5_copy = md5.copy()
+            md5_copy.update(str(n).encode('utf8'))
+            val = md5_copy.hexdigest()
+
+            if val.startswith('00000'):
+                if len(password1) < 8:
+                    password1.append(str(val[5]))
+
+                if '0' <= val[5] < '8' and val[5] not in password2:
+                    password2[val[5]] = val[6]
+
+            n += 1
+        print(''.join(password1))
+        print(''.join([password2[str(i)] for i in range(8)]))
+
+
+def day6():
+    with open(utils.get_input(YEAR, 6)) as inp:
+        code1 = []
+        code2 = []
+        lines = [line[:-1] for line in inp]
+        for i in range(len(lines[0])):
+            counter = collections.Counter([line[i] for line in lines])
+            code1.append(max(counter, key=lambda x: counter[x]))
+            code2.append(min(counter, key=lambda x: counter[x]))
+        print(''.join(code1))
+        print(''.join(code2))
+
+
+def day7():
+    def abba(string):
+        for j in range(1, len(string) - 2):
+            if string[j] == string[j + 1] and string[j] != string[j - 1] and string[j - 1] == string[j + 2]:
+                return True
+        return False
+
+    def aba(strings, bab=False):
+        out = set()
+        for string in strings:
+            for j in range(1, len(string) - 1):
+                if string[j] != string[j - 1] and string[j - 1] == string[j + 1]:
+                    if bab:
+                        out.add((string[j - 1], string[j]))
+                    else:
+                        out.add((string[j], string[j - 1]))
+        return out
+
+    with open(utils.get_input(YEAR, 7)) as inp:
+        count1 = count2 = 0
+        for line in inp:
+            supernet, hypernet = [], []
+            i = 0
+            line = line.strip()
+            for match in re.finditer(r'\[(\w+)]', line):
+                supernet.append(line[i:match.span()[0]])
+                hypernet.append(match.groups()[0])
+                i = match.span()[1]
+            supernet.append(line[i:])
+
+            if True in [abba(word) for word in supernet] and True not in [abba(word) for word in hypernet]:
+                count1 += 1
+
+            if aba(supernet).intersection(aba(hypernet, bab=True)):
+                count2 += 1
+
+        print(count1)
+        print(count2)
+
+
+def day8():
+    with open(utils.get_input(YEAR, 8)) as inp:
+        display = np.zeros((50, 6), dtype=bool)
+        for line in inp:
+            if line.startswith('rotate row'):
+                line = line.split()
+                j = int(line[2][2:])
+                n = int(line[4])
+                display[:, j] = np.roll(display[:, j], n)
+            elif line.startswith('rotate column'):
+                line = line.split()
+                i = int(line[2][2:])
+                n = int(line[4])
+                display[i] = np.roll(display[i], n)
+            else:
+                i, j = [int(d) for d in line.split()[1].split('x')]
+                display[:i, :j] = True
+        print(np.sum(display))
+
+        for j in range(6):
+            for i in range(50):
+                print('##' if display[i, j] else '  ', end='')
+            print()
+
+
+def day9():
+    def get_len(string):
+        if '(' not in string:
+            return len(string)
+        k = string.index('(')
+        match = re.match(r'\((\d+)x(\d+)\)', string[k:])
+        i, j = [int(d) for d in match.groups()]
+        return k + j * get_len(line[match.span()[1]:])
+
+    with open(utils.get_input(YEAR, 9)) as inp:
+        line = inp.readline().strip()
+        out = ''
+        while line:
+            if line[0] == '(':
+                match = re.match(r'\((\d+)x(\d+)\)', line)
+                i, j = [int(d) for d in match.groups()]
+                out = out + line[match.span()[1]:match.span()[1] + i] * j
+                line = line[match.span()[1] + i:]
+            else:
+                out = out + line[0]
+                line = line[1:]
+        print(len(out))
+
+
 if __name__ == '__main__':
-    day4()
+    day9()

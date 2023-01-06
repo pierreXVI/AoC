@@ -261,6 +261,241 @@ def day10():
     diff = np.diff(np.array([0, *data, data[-1] + 3]))
     print(len(diff[diff == 1]) * len(diff[diff == 3]))
 
+    count = 1
+    n = 0
+    for i in range(len(diff)):
+        if diff[i] == 1:
+            n += 1
+        else:
+            if n > 1:
+                foo = 2 ** (n - 1) + (n - 1) * n // 2 - n * (n - 3) - 3
+                count *= foo
+            n = 0
+    print(count)
+
+
+def day11():
+    with open(utils.get_input(YEAR, 11)) as inp:
+        state0 = np.array([[0 if c == '.' else 1 if c == '#' else 2 for c in line[:-1]] for line in inp], dtype=int)
+
+    def update1(grid):
+        new_grid = grid.copy()
+        change = False
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                if grid[i, j] == 2:
+                    if np.sum(grid[max(0, i - 1):i + 2, max(0, j - 1):j + 2] == 1) == 0:
+                        new_grid[i, j] = 1
+                        change = True
+                elif grid[i, j] == 1:
+                    if np.sum(grid[max(0, i - 1):i + 2, max(0, j - 1):j + 2] == 1) > 4:
+                        new_grid[i, j] = 2
+                        change = True
+        return new_grid, change
+
+    state = state0.copy()
+    run = True
+    while run:
+        state, run = update1(state)
+    print(np.sum(state == 1))
+
+    def update2(grid):
+        new_grid = grid.copy()
+        change = False
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                if grid[i, j] == 2:
+                    k = i - 1
+                    while k >= 0 and grid[k, j] == 0:
+                        k -= 1
+                    if k >= 0 and grid[k, j] == 1:
+                        continue
+                    k = j - 1
+                    while k >= 0 and grid[i, k] == 0:
+                        k -= 1
+                    if k >= 0 and grid[i, k] == 1:
+                        continue
+                    k = i + 1
+                    while k < grid.shape[0] and grid[k, j] == 0:
+                        k += 1
+                    if k < grid.shape[0] and grid[k, j] == 1:
+                        continue
+                    k = j + 1
+                    while k < grid.shape[1] and grid[i, k] == 0:
+                        k += 1
+                    if k < grid.shape[1] and grid[i, k] == 1:
+                        continue
+
+                    k = 1
+                    while i - k >= 0 and j - k >= 0 and grid[i - k, j - k] == 0:
+                        k += 1
+                    if i - k >= 0 and j - k >= 0 and grid[i - k, j - k] == 1:
+                        continue
+                    k = 1
+                    while i + k < grid.shape[0] and j + k < grid.shape[1] and grid[i + k, j + k] == 0:
+                        k += 1
+                    if i + k < grid.shape[0] and j + k < grid.shape[1] and grid[i + k, j + k] == 1:
+                        continue
+                    k = 1
+                    while i + k < grid.shape[0] and j - k >= 0 and grid[i + k, j - k] == 0:
+                        k += 1
+                    if i + k < grid.shape[0] and j - k >= 0 and grid[i + k, j - k] == 1:
+                        continue
+                    k = 1
+                    while i - k >= 0 and j + k < grid.shape[1] and grid[i - k, j + k] == 0:
+                        k += 1
+                    if i - k >= 0 and j + k < grid.shape[1] and grid[i - k, j + k] == 1:
+                        continue
+
+                    new_grid[i, j] = 1
+                    change = True
+                elif grid[i, j] == 1:
+                    count = 0
+
+                    k = i - 1
+                    while k >= 0 and grid[k, j] == 0:
+                        k -= 1
+                    if k >= 0 and grid[k, j] == 1:
+                        count += 1
+                    k = j - 1
+                    while k >= 0 and grid[i, k] == 0:
+                        k -= 1
+                    if k >= 0 and grid[i, k] == 1:
+                        count += 1
+                    k = i + 1
+                    while k < grid.shape[0] and grid[k, j] == 0:
+                        k += 1
+                    if k < grid.shape[0] and grid[k, j] == 1:
+                        count += 1
+                    k = j + 1
+                    while k < grid.shape[1] and grid[i, k] == 0:
+                        k += 1
+                    if k < grid.shape[1] and grid[i, k] == 1:
+                        count += 1
+
+                    k = 1
+                    while i - k >= 0 and j - k >= 0 and grid[i - k, j - k] == 0:
+                        k += 1
+                    if i - k >= 0 and j - k >= 0 and grid[i - k, j - k] == 1:
+                        count += 1
+                    k = 1
+                    while i + k < grid.shape[0] and j + k < grid.shape[1] and grid[i + k, j + k] == 0:
+                        k += 1
+                    if i + k < grid.shape[0] and j + k < grid.shape[1] and grid[i + k, j + k] == 1:
+                        count += 1
+                    k = 1
+                    while i + k < grid.shape[0] and j - k >= 0 and grid[i + k, j - k] == 0:
+                        k += 1
+                    if i + k < grid.shape[0] and j - k >= 0 and grid[i + k, j - k] == 1:
+                        count += 1
+                    k = 1
+                    while i - k >= 0 and j + k < grid.shape[1] and grid[i - k, j + k] == 0:
+                        k += 1
+                    if i - k >= 0 and j + k < grid.shape[1] and grid[i - k, j + k] == 1:
+                        count += 1
+
+                    if count > 4:
+                        new_grid[i, j] = 2
+                        change = True
+        return new_grid, change
+
+    state = state0.copy()
+    run = True
+    iii = 0
+    while run:
+        iii += 1
+        state, run = update2(state)
+    print(np.sum(state == 1))
+
+
+def day12():
+    with open(utils.get_input(YEAR, 12)) as inp:
+        alpha1 = x1 = y1 = x2 = y2 = 0
+        wx = 10
+        wy = 1
+        for line in inp:
+            val = int(line[1:])
+            if line[0] == 'N':
+                y1 += val
+                wy += val
+            elif line[0] == 'S':
+                y1 -= val
+                wy -= val
+            elif line[0] == 'E':
+                x1 += val
+                wx += val
+            elif line[0] == 'W':
+                x1 -= val
+                wx -= val
+            elif line[0] == 'L':
+                alpha1 += val
+                foo = (val // 90) % 4
+                if foo == 1:
+                    wx, wy = -wy, wx
+                elif foo == 2:
+                    wx, wy = -wx, -wy
+                elif foo == 3:
+                    wx, wy = wy, -wx
+            elif line[0] == 'R':
+                alpha1 -= val
+                foo = (val // 90) % 4
+                if foo == 1:
+                    wx, wy = wy, -wx
+                elif foo == 2:
+                    wx, wy = -wx, -wy
+                elif foo == 3:
+                    wx, wy = -wy, wx
+            elif line[0] == 'F':
+                foo = (alpha1 // 90) % 4
+                if foo == 0:
+                    x1 += val
+                elif foo == 1:
+                    y1 += val
+                elif foo == 2:
+                    x1 -= val
+                elif foo == 3:
+                    y1 -= val
+                x2 += val * wx
+                y2 += val * wy
+        print(abs(x1) + abs(y1))
+        print(abs(x2) + abs(y2))
+
+
+def day13():
+    with open(utils.get_input(YEAR, 13)) as inp:
+        start = int(inp.readline())
+        data = inp.readline().split(',')
+        table = np.array([int(d) for d in data if d != 'x'])
+        rank = np.array([i for i in range(len(data)) if data[i] != 'x'])
+        wait = table - start % table
+        best = np.argmin(wait)
+
+        # print(wait[best] * table[best])
+
+        def dioph(a, b):
+            q, r = divmod(a, b)
+            if r == 0:
+                return 0, b
+            else:
+                x, y = dioph(b, r)
+                return y, x - q * y
+
+        for k in range(100):
+            print(k, (8 + k * 17) * 13 - (6 + k * 13) * 17)
+
+        # table[i] * n[i] = t + rank[i]
+        # table[j] * n[j] = t + rank[j]
+
+        # table[j] * a[i, j] - table[i] * b[i, j] = rank[j] - rank[i]
+        # ==> n[j] = a[i, j] + k * table[i]
+        # ==> n[i] = b[i, j] + k * table[j]
+
+        # 17 * n0 = t
+        # 13 * n1 = t + 2
+        # 19 * n2 = t + 3
+        #
+        # 13 * n1 - 17 * n0 = 2
+
 
 def day13():
     def euclide(a, b):
