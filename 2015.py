@@ -1,6 +1,7 @@
-import utils
 import hashlib
 import re
+
+import utils
 
 YEAR = 2015
 
@@ -68,7 +69,6 @@ def day4():
 
 
 def day5():
-
     with open(utils.get_input(YEAR, 5)) as inp:
         count1 = count2 = 0
         for line in inp:

@@ -1,6 +1,9 @@
 import os
 
+import numpy as np
 import requests
+
+np.set_printoptions(linewidth=300)
 
 ROOT = 'data'
 URL = "https://adventofcode.com/{0}/day/{1}/input"

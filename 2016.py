@@ -1,10 +1,10 @@
+import collections
+import hashlib
 import re
 
 import numpy as np
-import collections
+
 import utils
-import hashlib
-import collections
 
 YEAR = 2016
 

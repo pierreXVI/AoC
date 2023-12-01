@@ -9,7 +9,6 @@ import numpy as np
 import utils
 
 YEAR = 2022
-np.set_printoptions(linewidth=300)
 
 
 def day1():

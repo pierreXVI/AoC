@@ -247,7 +247,7 @@ def day9():
             return 0
         _bassin[_i, _j] = True
         return 1 + scan_bassin(_i - 1, _j, _bassin) + scan_bassin(_i, _j - 1, _bassin) \
-               + scan_bassin(_i + 1, _j, _bassin) + scan_bassin(_i, _j + 1, _bassin)
+            + scan_bassin(_i + 1, _j, _bassin) + scan_bassin(_i, _j + 1, _bassin)
 
     level = 0
     sizes = [0, 0, 0]

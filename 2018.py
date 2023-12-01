@@ -5,8 +5,6 @@ import numpy as np
 
 import utils
 
-np.set_printoptions(linewidth=300)
-
 YEAR = 2018
 
 
