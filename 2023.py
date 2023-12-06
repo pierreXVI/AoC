@@ -130,5 +130,81 @@ def day4():
     print(part2.sum())
 
 
+def day5():
+    with open(utils.get_input(YEAR, 5)) as inp:
+        seeds = [int(s) for s in inp.readline().split(':')[-1].split()]
+        inp.readline()
+
+        part_1 = [(s, 1) for s in seeds]
+        part_2 = [(seeds[2 * i], seeds[2 * i + 1]) for i in range(len(seeds) // 2)]
+
+        def read_map():
+            parameters = []
+            _line = inp.readline()
+            while _line:
+                parameters.append(tuple(map(int, _line.split())))
+                _line = inp.readline().strip()
+            parameters.sort(key=lambda p: p[1])
+
+            def f(interval):
+                out = []
+                a, b = interval[0], interval[0] + interval[1] - 1
+                for dst_start, src_start, length in parameters:
+                    c, d = src_start, src_start + length - 1
+                    if a <= d and c <= b:
+                        out.append((a, max(a, c) - a))
+                        out.append((max(a, c) + dst_start - src_start, min(b, d) - max(a, c) + 1))
+                        a = min(b, d) + 1
+                    if a > b:
+                        return out
+                out.append((a, b - a + 1))
+                return out
+
+            return lambda intervals: [i for interval in intervals for i in f(interval) if i[1] > 0]
+
+        inp.readline()
+        seed2soil = read_map()
+        inp.readline()
+        soil2fertilizer = read_map()
+        inp.readline()
+        fertilizer2water = read_map()
+        inp.readline()
+        water2light = read_map()
+        inp.readline()
+        light2temperature = read_map()
+        inp.readline()
+        temperature2humidity = read_map()
+        inp.readline()
+        humidity2location = read_map()
+
+        print(min(humidity2location(temperature2humidity(
+            light2temperature(water2light(fertilizer2water(soil2fertilizer(seed2soil(part_1))))))))[0])
+
+        print(min(humidity2location(temperature2humidity(
+            light2temperature(water2light(fertilizer2water(soil2fertilizer(seed2soil(part_2))))))))[0])
+
+
+def day6():
+    with open(utils.get_input(YEAR, 6)) as inp:
+        times = list(map(int, inp.readline().strip().split(':')[-1].split()))
+        distances = list(map(int, inp.readline().strip().split(':')[-1].split()))
+
+    def solve(_d, _t):
+        n1 = int(np.ceil(t / 2 - np.sqrt((_t / 2) ** 2 - _d)))
+        n2 = int(np.floor(t / 2 + np.sqrt((_t / 2) ** 2 - _d)))
+        if n1 * (_t - n1) == _d:
+            n1 += 1
+        if n2 * (_t - n2) == _d:
+            n2 -= 1
+        return n2 - n1 + 1
+
+    part_1 = 1
+    for t, d in zip(times, distances):
+        part_1 *= solve(d, t)
+    print(part_1)
+
+    print(solve(int(''.join(map(str, distances))), int(''.join(map(str, times)))))
+
+
 if __name__ == '__main__':
-    day4()
+    day5()
