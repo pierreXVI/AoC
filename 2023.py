@@ -1,4 +1,5 @@
 import collections
+import functools
 
 import numpy as np
 
@@ -206,5 +207,68 @@ def day6():
     print(solve(int(''.join(map(str, distances))), int(''.join(map(str, times)))))
 
 
+def day7():
+    cards_1 = 'AKQJT98765432'
+    cards_2 = 'AKQT98765432J'
+
+    def kind(hand):
+        count = collections.Counter(hand)
+        s = collections.defaultdict(list)
+        for k in count:
+            s[count[k]].append(k)
+
+        if 5 in s:
+            return 6
+        elif 4 in s:
+            return 5
+        elif 3 in s and 2 in s:
+            return 4
+        elif 3 in s:
+            return 3
+        else:
+            return len(s[2])
+
+    def comp_1(player_a, player_b):
+        kind_a = kind(player_a[0])
+        kind_b = kind(player_b[0])
+        if kind_a == kind_b:
+            score_a = [cards_1.index(card) for card in player_a[0]]
+            score_b = [cards_1.index(card) for card in player_b[0]]
+            return 1 if score_a < score_b else -1 if score_b < score_a else 0
+        return 1 if kind_b < kind_a else -1
+
+    def best_hand(hand):
+        if 'J' not in hand:
+            return hand
+        i = hand.index('J')
+        return sorted([(best_hand(hand[:i] + c + hand[i + 1:]), 0) for c in cards_2[:-1]],
+                      key=functools.cmp_to_key(comp_1))[-1][0]
+
+    def comp_2(player_a, player_b):
+        kind_a = kind(player_a[1])
+        kind_b = kind(player_b[1])
+        if kind_a == kind_b:
+            score_a = [cards_2.index(card) for card in player_a[0]]
+            score_b = [cards_2.index(card) for card in player_b[0]]
+            return 1 if score_a < score_b else -1 if score_b < score_a else 0
+        return 1 if kind_b < kind_a else -1
+
+    with open(utils.get_input(YEAR, 7)) as inp:
+        players = []
+        for line in inp:
+            players.append(line.split())
+
+    part_1 = 0
+    for idx, player in enumerate(sorted(players, key=functools.cmp_to_key(comp_1))):
+        part_1 += (idx + 1) * int(player[1])
+    print(part_1)
+
+    part_2 = 0
+    players_jacked = [(player[0], best_hand(player[0]), player[1]) for player in players]
+    for idx, player in enumerate(sorted(players_jacked, key=functools.cmp_to_key(comp_2))):
+        part_2 += (idx + 1) * int(player[2])
+    print(part_2)
+
+
 if __name__ == '__main__':
-    day5()
+    day7()
