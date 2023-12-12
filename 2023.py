@@ -1,5 +1,7 @@
 import collections
 import functools
+import math
+import re
 
 import numpy as np
 
@@ -54,8 +56,7 @@ def day2():
         return int(game.split()[-1]), out
 
     with open(utils.get_input(YEAR, 2)) as inp:
-        part1 = 0
-        part2 = 0
+        part1 = part2 = 0
         for _line in inp:
             game_id, max_cubes = parse_line(_line)
             if max_cubes['red'] <= 12 and max_cubes['green'] <= 13 and max_cubes['blue'] <= 14:
@@ -241,7 +242,10 @@ def day7():
         if 'J' not in hand:
             return hand
         i = hand.index('J')
-        return sorted([(best_hand(hand[:i] + c + hand[i + 1:]), 0) for c in cards_2[:-1]],
+        possible_cards = set([c for c in hand if c != 'J'])
+        if not possible_cards:
+            possible_cards = ('A',)
+        return sorted([(best_hand(hand[:i] + c + hand[i + 1:]), 0) for c in possible_cards],
                       key=functools.cmp_to_key(comp_1))[-1][0]
 
     def comp_2(player_a, player_b):
@@ -270,5 +274,153 @@ def day7():
     print(part_2)
 
 
+def day8():
+    with open(utils.get_input(YEAR, 8)) as inp:
+        directions = inp.readline().strip()
+
+        inp.readline()
+        graph = {}
+        for line in inp:
+            line = re.match(r'([A-Z1-9]{3}) = \(([A-Z1-9]{3}), ([A-Z1-9]{3})\)', line)
+            graph[line.group(1)] = (line.group(2), line.group(3))
+
+    def solve(start, is_end):
+        i = 0
+        n_directions = len(directions)
+        while not is_end(start):
+            start = graph[start][0 if directions[i % n_directions] == 'L' else 1]
+            i += 1
+        return i
+
+    print(solve('AAA', lambda here: here == 'ZZZ'))
+    print(math.lcm(*[solve(place, lambda here: here[2] == 'Z') for place in graph if place[2] == 'A']))
+
+
+def day9():
+    with open(utils.get_input(YEAR, 9)) as inp:
+        part1 = part2 = 0
+        for line in inp:
+            data = np.array(line.split(), dtype=int)
+            foo = []
+            bar = []
+            while (data != 0).any():
+                foo.append(data[-1])
+                bar.append(data[0])
+                data = np.diff(data)
+            part1 += sum(foo)
+            part2 += sum([-bar[i] if i % 2 else bar[i] for i in range(len(bar))])
+        print(part1)
+        print(part2)
+
+
+def day10():
+    with open(utils.get_input(YEAR, 10)) as inp:
+        data = np.array(list(map(list, inp.read().splitlines())))
+
+    directions = {
+        '|': {(1, 0): '|LJ', (-1, 0): '|7F'},
+        '-': {(0, 1): '-J7', (0, -1): '-LF'},
+        'L': {(0, 1): '-J7', (-1, 0): '|7F'},
+        'J': {(0, -1): '-LF', (-1, 0): '|7F'},
+        '7': {(1, 0): '|LJ', (0, -1): '-LF'},
+        'F': {(0, 1): '-J7', (1, 0): '|LJ'},
+        'S': {(0, 1): '-J7', (1, 0): '|LJ', (0, -1): '-LF', (-1, 0): '|7F'}}
+
+    def find_next(here, prev):
+        dirs = directions[data[here[0], here[1]]]
+        for k in dirs:
+            if 0 <= here[0] + k[0] < data.shape[0] and 0 <= here[1] + k[1] < data.shape[1] \
+                    and (k[0] + prev[0] != 0 or k[1] + prev[1] != 0) \
+                    and data[here[0] + k[0], here[1] + k[1]] in dirs[k]:
+                return k
+
+    loop = [tuple(np.argwhere(data == 'S')[0])]
+
+    previous = (0, 0)
+    while True:
+        previous = find_next(loop[-1], previous)
+        if previous is None:
+            break
+        loop.append((loop[-1][0] + previous[0], loop[-1][1] + previous[1]))
+    print(len(loop) // 2)
+
+    data[tuple(loop[0])] = set(directions[data[tuple(loop[1])]][loop[0][0] - loop[1][0], loop[0][1] - loop[1][1]]) \
+        .intersection(directions[data[tuple(loop[-1])]][loop[0][0] - loop[-1][0], loop[0][1] - loop[-1][1]]).pop()
+
+    part2 = 0
+    loop = set(loop)
+    for i in range(data.shape[0]):
+        inside = False
+        foo = ''
+        for j in range(data.shape[1]):
+            if (i, j) in loop:
+                if data[i, j] == '|':
+                    inside = not inside
+                    foo = ''
+                elif data[i, j] == 'J':
+                    inside = not inside if foo == 'F' else inside
+                    foo = ''
+                elif data[i, j] == '7':
+                    inside = not inside if foo == 'L' else inside
+                    foo = ''
+                elif not foo:
+                    foo = data[i, j]
+            elif inside:
+                part2 += 1
+    print(part2)
+
+
+def day11():
+    with open(utils.get_input(YEAR, 11)) as inp:
+        data = np.array([[c == '#' for c in line.strip()] for line in inp.readlines()])
+
+    def expand(_galaxies, scale):
+        def expand_axis(array):
+            expanded = np.zeros_like(array)
+            indices = np.argsort(array)
+            line = -1
+            expansion = 0
+            for i in indices:
+                expansion += max(0, array[i] + expansion - line - 1) * (scale - 1)
+                expanded[i] = array[i] + expansion
+                line = expanded[i]
+            return expanded
+
+        return expand_axis(_galaxies[:, 0]), expand_axis(_galaxies[:, 1])
+
+    def get_score(rows, cols):
+        score = 0
+        for i in range(len(rows)):
+            for j in range(i + 1, len(rows)):
+                score += abs(rows[i] - rows[j]) + abs(cols[i] - cols[j])
+        return score
+
+    galaxies = np.argwhere(data)
+    print(get_score(*expand(galaxies, 2)))
+    print(get_score(*expand(galaxies, 1000000)))
+
+
+def day12():
+    def count_valid(_pipes, _count):
+        count = 0
+        indices = np.argwhere(_pipes == '?').flatten()
+        for i in range(2 ** len(indices)):
+            substitution = _pipes.copy()
+            for j in range(len(indices)):
+                substitution[indices[j]] = '#' if (i // 2 ** j) % 2 else '.'
+            if [len(broken) for broken in ''.join(substitution).split('.') if broken] == _count:
+                count += 1
+        return count
+
+    with open(utils.get_input(YEAR, 12)) as inp:
+        part1 = 0
+        for line in inp:
+            pipes, data = line.strip().split()
+            pipes = np.array(list(pipes))
+            data = np.array(data.split(','), dtype=int).tolist()
+            part1 += count_valid(pipes, data)
+        print(part1)
+
+
 if __name__ == '__main__':
-    day7()
+    day12()
