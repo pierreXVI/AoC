@@ -401,26 +401,88 @@ def day11():
 
 
 def day12():
-    def count_valid(_pipes, _count):
-        count = 0
-        indices = np.argwhere(_pipes == '?').flatten()
-        for i in range(2 ** len(indices)):
-            substitution = _pipes.copy()
-            for j in range(len(indices)):
-                substitution[indices[j]] = '#' if (i // 2 ** j) % 2 else '.'
-            if [len(broken) for broken in ''.join(substitution).split('.') if broken] == _count:
-                count += 1
-        return count
+    mem = {}
+
+    def validate(springs, groups):
+        if (springs, *groups) in mem:
+            return mem[(springs, *groups)]
+
+        if not springs:
+            mem[(springs, *groups)] = int(not groups)
+            return int(not groups)
+        if not groups:
+            mem[(springs, *groups)] = int('#' not in springs)
+            return int('#' not in springs)
+
+        i = 0
+        while i < len(springs) and springs[i] == '.':
+            i += 1
+        if groups and i == len(springs):
+            mem[(springs, *groups)] = 0
+            return 0
+        j = i
+        while j < len(springs) and springs[j] != '.':
+            j += 1
+
+        if springs[i] == '?':
+            if j - i < groups[0] or (i + groups[0] < len(springs) and springs[i + groups[0]] == '#'):
+                mem[(springs, *groups)] = validate(springs[i + 1:], groups)
+            else:
+                mem[(springs, *groups)] = validate(springs[i + 1:], groups) + validate(springs[i + groups[0] + 1:],
+                                                                                       groups[1:])
+        else:
+            if j - i < groups[0] or (i + groups[0] != len(springs) and springs[i + groups[0]] == '#'):
+                mem[(springs, *groups)] = 0
+            else:
+                mem[(springs, *groups)] = validate(springs[i + groups[0] + 1:], groups[1:])
+        return mem[(springs, *groups)]
 
     with open(utils.get_input(YEAR, 12)) as inp:
-        part1 = 0
+        part1 = part2 = 0
         for line in inp:
-            pipes, data = line.strip().split()
-            pipes = np.array(list(pipes))
-            data = np.array(data.split(','), dtype=int).tolist()
-            part1 += count_valid(pipes, data)
+            record = line.strip().split()
+            part1 += validate(record[0], [int(c) for c in record[1].split(',')])
+            part2 += validate('?'.join(5 * [record[0]]), 5 * [int(c) for c in record[1].split(',')])
+        print(part1)
+        print(part2)
+
+
+@utils.time_me
+def day13():
+    def find_score(pattern):
+        for i in range(1, pattern.shape[0]):
+            left = pattern[:i]
+            right = pattern[i:]
+            n = min(left.shape[0], right.shape[0])
+            left = left[::-1][:n]
+            right = right[:n]
+            if (left == right).all():
+                return 100 * i
+
+        for i in range(1, pattern.shape[1]):
+            left = pattern[:, :i]
+            right = pattern[:, i:]
+            n = min(left.shape[1], right.shape[1])
+            left = left[:, ::-1][:, :n]
+            right = right[:, :n]
+            if (left == right).all():
+                return i
+        return 0
+
+    with open(utils.get_input(YEAR, 13)) as inp:
+
+        part1 = 0
+        while True:
+            data = []
+            line = inp.readline().strip()
+            while line:
+                data.append([c == '#' for c in line])
+                line = inp.readline().strip()
+            if not data:
+                break
+            part1 += find_score(np.array(data))
         print(part1)
 
 
 if __name__ == '__main__':
-    day12()
+    day13()

@@ -1,4 +1,5 @@
 import os
+import time
 
 import numpy as np
 import requests
@@ -26,3 +27,13 @@ def get_input(year, day):
     if not os.path.exists(path):
         _download_input(year, day, path)
     return path
+
+
+def time_me(f):
+    def timed_f(*args, **kwargs):
+        start_time = time.time()
+        out = f(*args, **kwargs)
+        print("\nRan in {0}s".format(time.time() - start_time))
+        return out
+
+    return timed_f
