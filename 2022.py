@@ -336,7 +336,7 @@ def day11():
 
 
 def day12():
-    def djikstra(costs, start, end):
+    def dijkstra(costs, start, end):
         score = {(x, y): np.inf for x in range(costs.shape[0]) for y in range(costs.shape[1])}
         score[start] = 0
         done = set()
@@ -358,7 +358,7 @@ def day12():
 
         return score[end]
 
-    def reverse_djikstra(costs, start, end):
+    def reverse_dijkstra(costs, start, end):
         score = {(x, y): np.inf for x in range(costs.shape[0]) for y in range(costs.shape[1])}
         score[start] = 0
         done = set()
@@ -387,13 +387,13 @@ def day12():
         grid[xs, ys] = ord('a')
         grid[xe, ye] = ord('z')
 
-        print(djikstra(grid, (xs, ys), (xe, ye)))
+        print(dijkstra(grid, (xs, ys), (xe, ye)))
 
         foo = np.inf
         for i in range(grid.shape[0]):
             for j in range(grid.shape[1]):
                 if grid[i, j] == ord('a'):
-                    foo = min(foo, djikstra(grid, (i, j), (xe, ye)))
+                    foo = min(foo, dijkstra(grid, (i, j), (xe, ye)))
         print(foo)
 
 
@@ -522,7 +522,7 @@ def day15():
 
 
 def day16():
-    def djikstra(costs, start, end):
+    def dijkstra(costs, start, end):
         score = {x: np.inf for x in costs}
         score[start] = 0
         done = set()
@@ -556,7 +556,7 @@ def day16():
         for d in cave:
             for dd in cave:
                 if dd not in cave[d][1] and dd != d:
-                    cave[dd][1][d] = cave[d][1][dd] = djikstra({d: cave[d][1] for d in cave}, d, dd)
+                    cave[dd][1][d] = cave[d][1][dd] = dijkstra({d: cave[d][1] for d in cave}, d, dd)
 
         def recursive_shit(rest, c, n):
             if n <= 0:

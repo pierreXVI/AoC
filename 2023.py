@@ -1,5 +1,6 @@
 import collections
 import functools
+import heapq
 import math
 import re
 
@@ -74,7 +75,7 @@ def day3():
         return c != '.' and not '0' <= c <= '9'
 
     part1 = 0
-    gears = collections.defaultdict(list)
+    gears: collections.defaultdict[tuple[int, int], list] = collections.defaultdict(list)
     for i in range(data.shape[0]):
         j = 0
         while j < data.shape[1]:
@@ -214,7 +215,7 @@ def day7():
 
     def kind(hand):
         count = collections.Counter(hand)
-        s = collections.defaultdict(list)
+        s: collections.defaultdict[int, list] = collections.defaultdict(list)
         for k in count:
             s[count[k]].append(k)
 
@@ -447,31 +448,20 @@ def day12():
         print(part2)
 
 
-@utils.time_me
 def day13():
-    def find_score(pattern):
+    def find_score(pattern, ndiff):
         for i in range(1, pattern.shape[0]):
-            left = pattern[:i]
-            right = pattern[i:]
-            n = min(left.shape[0], right.shape[0])
-            left = left[::-1][:n]
-            right = right[:n]
-            if (left == right).all():
+            n = min(i, pattern.shape[0] - i)
+            if np.sum(pattern[i - n:i][::-1] != pattern[i:i + n]) == ndiff:
                 return 100 * i
-
         for i in range(1, pattern.shape[1]):
-            left = pattern[:, :i]
-            right = pattern[:, i:]
-            n = min(left.shape[1], right.shape[1])
-            left = left[:, ::-1][:, :n]
-            right = right[:, :n]
-            if (left == right).all():
+            n = min(i, pattern.shape[1] - i)
+            if np.sum(pattern[:, i - n:i][:, ::-1] != pattern[:, i:i + n]) == ndiff:
                 return i
         return 0
 
     with open(utils.get_input(YEAR, 13)) as inp:
-
-        part1 = 0
+        part1 = part2 = 0
         while True:
             data = []
             line = inp.readline().strip()
@@ -480,9 +470,254 @@ def day13():
                 line = inp.readline().strip()
             if not data:
                 break
-            part1 += find_score(np.array(data))
+            part1 += find_score(np.array(data), 0)
+            part2 += find_score(np.array(data), 1)
         print(part1)
+        print(part2)
+
+
+def day14():
+    with open(utils.get_input(YEAR, 14)) as inp:
+        data = np.array([[1 if c == 'O' else -1 if c == '#' else 0 for c in line.strip()] for line in inp])
+
+    def score(rocks):
+        return np.sum((rocks == 1).T * np.arange(rocks.shape[0], 0, -1))
+
+    def tilt_north(rocks):
+        for i in range(rocks.shape[0]):
+            for j in range(rocks.shape[1]):
+                if rocks[i, j] == 1:
+                    k = i - 1
+                    while k >= 0 and rocks[k, j] == 0:
+                        k -= 1
+                    rocks[i, j] = 0
+                    rocks[k + 1, j] = 1
+
+    def tilt_west(rocks):
+        for j in range(rocks.shape[1]):
+            for i in range(rocks.shape[0]):
+                if rocks[i, j] == 1:
+                    k = j - 1
+                    while k >= 0 and rocks[i, k] == 0:
+                        k -= 1
+                    rocks[i, j] = 0
+                    rocks[i, k + 1] = 1
+
+    def tilt_south(rocks):
+        for i in range(rocks.shape[0] - 1, -1, -1):
+            for j in range(rocks.shape[1]):
+                if rocks[i, j] == 1:
+                    k = i + 1
+                    while k < rocks.shape[0] and rocks[k, j] == 0:
+                        k += 1
+                    rocks[i, j] = 0
+                    rocks[k - 1, j] = 1
+
+    def tilt_east(rocks):
+        for j in range(rocks.shape[1] - 1, -1, -1):
+            for i in range(rocks.shape[0]):
+                if rocks[i, j] == 1:
+                    k = j + 1
+                    while k < rocks.shape[1] and rocks[i, k] == 0:
+                        k += 1
+                    rocks[i, j] = 0
+                    rocks[i, k - 1] = 1
+
+    def tilt_cycle(rocks):
+        tilt_north(rocks)
+        tilt_west(rocks)
+        tilt_south(rocks)
+        tilt_east(rocks)
+
+    part1 = data.copy()
+    tilt_north(part1)
+    print(score(part1))
+
+    part2 = data.copy()
+    history = [part2.flatten().tolist()]
+    for n in range(1000000000):
+        tilt_cycle(part2)
+        part2_flat = part2.flatten().tolist()
+        if part2_flat in history:
+            n0 = history.index(part2_flat)
+            part2 = np.array(history[((1000000000 - n0) % (n + 1 - n0)) + n0]).reshape(data.shape)
+            break
+        history.append(part2_flat)
+    print(score(part2))
+
+
+def day15():
+    with open(utils.get_input(YEAR, 15)) as inp:
+        data = inp.readline().strip().split(',')
+
+    def hash_algorithm(_step):
+        score = 0
+        for c in _step:
+            score = ((score + ord(c)) * 17) % 256
+        return score
+
+    print(sum(hash_algorithm(step) for step in data))
+
+    boxes = [[] for _ in range(256)]
+    for step in data:
+        if step[-1] == '-':
+            label = step[:-1]
+            box = boxes[hash_algorithm(label)]
+            for i in range(len(box)):
+                if box[i][0] == label:
+                    box.pop(i)
+                    break
+        else:
+            label = step[:-2]
+            box = boxes[hash_algorithm(label)]
+            for i in range(len(box)):
+                if box[i][0] == label:
+                    box[i][1] = int(step[-1])
+                    break
+            else:
+                box.append([label, int(step[-1])])
+
+    part2 = 0
+    for i in range(len(boxes)):
+        for j in range(len(boxes[i])):
+            part2 += (i + 1) * (j + 1) * boxes[i][j][1]
+    print(part2)
+
+
+def day16():
+    with open(utils.get_input(YEAR, 16)) as inp:
+        data = np.array([list(line.strip()) for line in inp])
+
+    def get_energized(start):
+        energized = np.zeros((*data.shape, 2, 2), dtype=bool)
+        rays = [start]
+        while rays:
+            new_rays = []
+            for i, j, direction in rays:
+
+                if not 0 <= i < data.shape[0] or not 0 <= j < data.shape[1] \
+                        or energized[i, j, direction % 2, (direction // abs(direction) + 1) // 2]:
+                    continue
+
+                energized[i, j, direction % 2, (direction // abs(direction) + 1) // 2] = True
+
+                if data[i, j] == '-':
+                    energized[i, j, 0, :] = True
+                    if direction == 2:
+                        new_rays.append((i, j + 1, 2))
+                    elif direction == -2:
+                        new_rays.append((i, j - 1, -2))
+                    else:
+                        new_rays.append((i, j - 1, -2))
+                        new_rays.append((i, j + 1, 2))
+                elif data[i, j] == '|':
+                    energized[i, j, 1, :] = True
+                    if direction == 1:
+                        new_rays.append((i + 1, j, 1))
+                    elif direction == -1:
+                        new_rays.append((i - 1, j, -1))
+                    else:
+                        new_rays.append((i - 1, j, -1))
+                        new_rays.append((i + 1, j, 1))
+                elif data[i, j] == '/':
+                    if direction == 2:
+                        new_rays.append((i - 1, j, -1))
+                    elif direction == -2:
+                        new_rays.append((i + 1, j, 1))
+                    elif direction == 1:
+                        new_rays.append((i, j - 1, -2))
+                    elif direction == -1:
+                        new_rays.append((i, j + 1, 2))
+                elif data[i, j] == '\\':
+                    if direction == 2:
+                        new_rays.append((i + 1, j, 1))
+                    elif direction == -2:
+                        new_rays.append((i - 1, j, -1))
+                    elif direction == 1:
+                        new_rays.append((i, j + 1, 2))
+                    elif direction == -1:
+                        new_rays.append((i, j - 1, -2))
+                else:
+                    energized[i, j, direction % 2, :] = True
+                    if direction == 2:
+                        new_rays.append((i, j + 1, 2))
+                    elif direction == -2:
+                        new_rays.append((i, j - 1, -2))
+                    elif direction == 1:
+                        new_rays.append((i + 1, j, 1))
+                    elif direction == -1:
+                        new_rays.append((i - 1, j, -1))
+
+            rays = new_rays
+        return energized
+
+    def count_energized(energized):
+        return np.sum(energized, axis=(2, 3), dtype=bool).sum()
+
+    print(count_energized(get_energized((0, 0, 2))))
+
+    part2 = 0
+    all_energized = np.zeros((*data.shape, 2, 2), dtype=bool)
+    for ii in range(data.shape[0]):
+        if not all_energized[ii, 0, 0, :].any():
+            current_energized = get_energized((ii, 0, 2))
+            all_energized += current_energized
+            part2 = max(part2, count_energized(current_energized))
+
+        if not all_energized[ii, data.shape[1] - 1, 0, :].any():
+            current_energized = get_energized((ii, data.shape[1] - 1, -2))
+            all_energized += current_energized
+            part2 = max(part2, count_energized(current_energized))
+
+    for jj in range(data.shape[1]):
+        if not all_energized[0, jj, 1, :].any():
+            current_energized = get_energized((0, jj, 1))
+            all_energized += current_energized
+            part2 = max(part2, count_energized(current_energized))
+
+        if not all_energized[data.shape[0] - 1, jj, :].any():
+            current_energized = get_energized((data.shape[0] - 1, jj, -1))
+            all_energized += current_energized
+            part2 = max(part2, count_energized(current_energized))
+    print(part2)
+
+
+def day17():
+    with open(utils.get_input(YEAR, 17)) as inp:
+        data = np.array([list(line.strip()) for line in inp], dtype=int)
+
+    def dijkstra(min_consecutive, max_consecutive):
+        score = np.inf * np.ones((*data.shape, 2))
+        score[0, 0] = 0
+        done = set()
+        hq = [(0, (0, 0, 0)), (0, (0, 0, 1))]
+
+        while hq:
+            c0, (x, y, axis) = heapq.heappop(hq)
+            if (x, y) == (data.shape[0] - 1, data.shape[1] - 1):
+                break
+            done.add((x, axis))
+            for direction in (+1, -1):
+                c = c0
+                for i in range(1, min_consecutive):
+                    new = (x + axis * direction * i, y + (1 - axis) * direction * i)
+                    if not 0 <= new[1 - axis] < data.shape[1 - axis]:
+                        break
+                    c += data[new]
+                for i in range(min_consecutive, max_consecutive):
+                    new = (x + axis * direction * i, y + (1 - axis) * direction * i)
+                    if not 0 <= new[1 - axis] < data.shape[1 - axis]:
+                        break
+                    c += data[new]
+                    if c < score[new[0], new[1], axis] and (*new, 1 - axis) not in done:
+                        score[new[0], new[1], axis] = c
+                        heapq.heappush(hq, (c, (*new, 1 - axis)))
+
+        return int(min(score[-1, -1]))
+
+    print(dijkstra(1, 4))
+    print(dijkstra(4, 11))
 
 
 if __name__ == '__main__':
-    day13()
+    utils.time_me(day17)()

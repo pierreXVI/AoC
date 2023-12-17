@@ -448,7 +448,7 @@ def day15():
     with open(utils.get_input(YEAR, 15)) as inp:
         data = np.array([[int(d) for d in line[:-1]] for line in inp], dtype=int)
 
-    def djikstra(costs, start, end):
+    def dijkstra(costs, start, end):
         score = {(x, y): np.inf for x in range(costs.shape[0]) for y in range(costs.shape[1])}
         score[start] = 0
         done = set()
@@ -470,7 +470,7 @@ def day15():
 
         return score[end]
 
-    print(djikstra(data, (0, 0), (data.shape[0] - 1, data.shape[1] - 1)))
+    print(dijkstra(data, (0, 0), (data.shape[0] - 1, data.shape[1] - 1)))
 
     nx, ny = data.shape
     new_data = np.zeros((5 * nx, 5 * ny), dtype=int)
@@ -478,7 +478,7 @@ def day15():
         for j in range(5):
             new_data[i * nx:(i + 1) * nx, j * ny:(j + 1) * ny] = data + i + j
     data = ((new_data - 1) % 9) + 1
-    print(djikstra(data, (0, 0), (data.shape[0] - 1, data.shape[1] - 1)))
+    print(dijkstra(data, (0, 0), (data.shape[0] - 1, data.shape[1] - 1)))
 
 
 def day16():
