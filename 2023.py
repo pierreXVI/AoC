@@ -719,5 +719,51 @@ def day17():
     print(dijkstra(4, 11))
 
 
+def day18():
+    with open(utils.get_input(YEAR, 18)) as inp:
+        grid = np.zeros((1, 1), dtype=bool)
+        pos = (0, 0)
+
+        for line in inp:
+            direction, n, color = line.split()
+            new_pos = (pos[0] + (int(n) if direction == 'D' else - int(n) if direction == 'U' else 0),
+                       pos[1] + (int(n) if direction == 'R' else - int(n) if direction == 'L' else 0))
+            shape_var = [new_pos[axis] if new_pos[axis] < 0
+                         else new_pos[axis] - grid.shape[axis] + 1 if new_pos[axis] >= grid.shape[axis] else 0
+                         for axis in range(2)]
+            grid, shift = utils.resize(grid, shape_var)
+            grid[min(pos[0], new_pos[0]) + shift[0]:max(pos[0], new_pos[0]) + shift[0] + 1, pos[1] + shift[1]] = True
+            grid[pos[0] + shift[0], min(pos[1], new_pos[1]) + shift[1]:max(pos[1], new_pos[1]) + shift[1] + 1] = True
+            pos = tuple(np.array(new_pos) + shift)
+
+        foo = grid.copy()
+        part1 = 0
+        for i in range(grid.shape[0]):
+            inside = False
+            j = 0
+            while j < grid.shape[1]:
+                if grid[i, j]:
+                    is_up = i > 0 and grid[i - 1, j]
+                    n = 0
+                    while j < grid.shape[1] and grid[i, j]:
+                        part1 += 1
+                        j += 1
+                        n += 1
+                    if n == 1 or (j <= grid.shape[1] and is_up != (i > 0 and grid[i - 1, j - 1])):
+                        inside = not inside
+
+                    continue
+                else:
+                    if inside:
+                        part1 += 1
+                        foo[i, j] = True
+
+                j += 1
+
+        # utils.print_boolean2d(grid)
+        # utils.print_boolean2d(foo)
+        print(part1)
+
+
 if __name__ == '__main__':
-    utils.time_me(day17)()
+    utils.time_me(day18)()
