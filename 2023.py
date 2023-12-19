@@ -742,56 +742,71 @@ def day18():
 
 
 def day19():
-    def rule_factory(rule_detail):
-        m = re.match(r'([xmas])([<>])(\d+):(\w+)', rule_detail)
-        if not m:
-            return lambda p: rule_detail
-        elif m.groups()[1] == '>':
-            return lambda p: m.groups()[3] if p[m.groups()[0]] > int(m.groups()[2]) else None
+    def apply_rule(r, p):
+        if r[1]:
+            return r[3] if p[r[0]] > r[2] else None
         else:
-            return lambda p: m.groups()[3] if p[m.groups()[0]] < int(m.groups()[2]) else None
+            return r[3] if p[r[0]] < r[2] else None
 
+    def apply_workflow(w, p):
+        for r in w:
+            if apply_rule(r, p):
+                return apply_rule(r, p)
+
+    workflows = {}
     with open(utils.get_input(YEAR, 19)) as inp:
-        workflows = {}
         for line in inp:
             if not line.strip():
                 break
 
-            name, rules = re.match(r'(\w+)\{(.*)}', line).groups()
-            workflows[name] = tuple()
-            for rule in rules.split(','):
-                workflows[name] += (rule_factory(rule),)
+            _name, _rules = re.match(r'(\w+)\{(.*)}', line).groups()
+            workflows[_name] = tuple()
+            for _rule in _rules.split(','):
+                rule_detail = re.match(r'([xmas])([<>])(\d+):(\w+)', _rule)
+                if rule_detail:
+                    workflows[_name] += ((rule_detail.group(1), rule_detail.group(2) == '>', int(rule_detail.group(3)),
+                                          rule_detail.group(4)),)
+                else:
+                    workflows[_name] += (('x', True, 0, _rule,),)
 
         part1 = 0
         for line in inp:
             part = {attribute.split('=')[0]: int(attribute.split('=')[1]) for attribute in line[1:-2].split(',')}
 
-            name = 'in'
-            while name not in ('A', 'R'):
-                for rule in workflows[name]:
-                    new_name = rule(part)
-                    if new_name is not None:
-                        name = new_name
-                        break
-            if name == 'A':
+            _name = 'in'
+            while _name not in ('A', 'R'):
+                _name = apply_workflow(workflows[_name], part)
+            if _name == 'A':
                 part1 += part['x'] + part['m'] + part['a'] + part['s']
         print(part1)
 
+    def back_propagate(name, valid_range):
+        new_valid_ranges = []
+        for workflow in workflows:
+            valid = valid_range.copy()
+            for rule in workflows[workflow]:
+                if rule[3] == name:
+                    new_valid = valid.copy()
+                    if rule[1]:
+                        new_valid[rule[0]] = (max(valid[rule[0]][0], rule[2] + 1), valid[rule[0]][1])
+                    else:
+                        new_valid[rule[0]] = (valid[rule[0]][0], min(valid[rule[0]][1], rule[2] - 1))
+                    new_valid_ranges.append((workflow, new_valid))
+
+                if rule[1]:
+                    valid[rule[0]] = (valid[rule[0]][0], min(valid[rule[0]][1], rule[2]))
+                else:
+                    valid[rule[0]] = (max(valid[rule[0]][0], rule[2]), valid[rule[0]][1])
+        return new_valid_ranges
+
     part2 = 0
-    for x in range(1, 4000):
-        for m in range(1, 4000):
-            for a in range(1, 4000):
-                for s in range(1, 4000):
-                    part = {'x': x, 'm': m, 'a': a, 's': s}
-                    name = 'in'
-                    while name not in ('A', 'R'):
-                        for rule in workflows[name]:
-                            new_name = rule(part)
-                            if new_name is not None:
-                                name = new_name
-                                break
-                    if name == 'A':
-                        part2 += part['x'] + part['m'] + part['a'] + part['s']
+    all_valid = [('A', {'x': (1, 4000), 'm': (1, 4000), 'a': (1, 4000), 's': (1, 4000)})]
+    while all_valid:
+        _name, _valid = all_valid.pop()
+        if _name == 'in':
+            part2 += math.prod(max(0, _valid[cat][1] - _valid[cat][0] + 1) for cat in _valid)
+            continue
+        all_valid += back_propagate(_name, _valid)
     print(part2)
 
 
