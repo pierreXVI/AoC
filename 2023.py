@@ -721,49 +721,79 @@ def day17():
 
 def day18():
     with open(utils.get_input(YEAR, 18)) as inp:
-        grid = np.zeros((1, 1), dtype=bool)
-        pos = (0, 0)
-
+        part1 = part2 = 0
+        pos1 = pos2 = (0, 0)
         for line in inp:
             direction, n, color = line.split()
-            new_pos = (pos[0] + (int(n) if direction == 'D' else - int(n) if direction == 'U' else 0),
-                       pos[1] + (int(n) if direction == 'R' else - int(n) if direction == 'L' else 0))
-            shape_var = [new_pos[axis] if new_pos[axis] < 0
-                         else new_pos[axis] - grid.shape[axis] + 1 if new_pos[axis] >= grid.shape[axis] else 0
-                         for axis in range(2)]
-            grid, shift = utils.resize(grid, shape_var)
-            grid[min(pos[0], new_pos[0]) + shift[0]:max(pos[0], new_pos[0]) + shift[0] + 1, pos[1] + shift[1]] = True
-            grid[pos[0] + shift[0], min(pos[1], new_pos[1]) + shift[1]:max(pos[1], new_pos[1]) + shift[1] + 1] = True
-            pos = tuple(np.array(new_pos) + shift)
+            dx = int(n) if direction == 'D' else - int(n) if direction == 'U' else 0
+            dy = int(n) if direction == 'R' else - int(n) if direction == 'L' else 0
+            part1 += dx * (2 * pos1[1] + dy) + abs(dx) + abs(dy)
+            pos1 = (pos1[0] + dx, pos1[1] + dy)
 
-        foo = grid.copy()
+            n = int(color[2:-2], 16)
+            direction = {'0': 'R', '1': 'D', '2': 'L', '3': 'U'}[color[-2]]
+            dx = int(n) if direction == 'D' else - int(n) if direction == 'U' else 0
+            dy = int(n) if direction == 'R' else - int(n) if direction == 'L' else 0
+            part2 += dx * (2 * pos2[1] + dy) + abs(dx) + abs(dy)
+            pos2 = (pos2[0] + dx, pos2[1] + dy)
+
+        print(part1 // 2 + 1)
+        print(part2 // 2 + 1)
+
+
+def day19():
+    def rule_factory(rule_detail):
+        m = re.match(r'([xmas])([<>])(\d+):(\w+)', rule_detail)
+        if not m:
+            return lambda p: rule_detail
+        elif m.groups()[1] == '>':
+            return lambda p: m.groups()[3] if p[m.groups()[0]] > int(m.groups()[2]) else None
+        else:
+            return lambda p: m.groups()[3] if p[m.groups()[0]] < int(m.groups()[2]) else None
+
+    with open(utils.get_input(YEAR, 19)) as inp:
+        workflows = {}
+        for line in inp:
+            if not line.strip():
+                break
+
+            name, rules = re.match(r'(\w+)\{(.*)}', line).groups()
+            workflows[name] = tuple()
+            for rule in rules.split(','):
+                workflows[name] += (rule_factory(rule),)
+
         part1 = 0
-        for i in range(grid.shape[0]):
-            inside = False
-            j = 0
-            while j < grid.shape[1]:
-                if grid[i, j]:
-                    is_up = i > 0 and grid[i - 1, j]
-                    n = 0
-                    while j < grid.shape[1] and grid[i, j]:
-                        part1 += 1
-                        j += 1
-                        n += 1
-                    if n == 1 or (j <= grid.shape[1] and is_up != (i > 0 and grid[i - 1, j - 1])):
-                        inside = not inside
+        for line in inp:
+            part = {attribute.split('=')[0]: int(attribute.split('=')[1]) for attribute in line[1:-2].split(',')}
 
-                    continue
-                else:
-                    if inside:
-                        part1 += 1
-                        foo[i, j] = True
-
-                j += 1
-
-        # utils.print_boolean2d(grid)
-        # utils.print_boolean2d(foo)
+            name = 'in'
+            while name not in ('A', 'R'):
+                for rule in workflows[name]:
+                    new_name = rule(part)
+                    if new_name is not None:
+                        name = new_name
+                        break
+            if name == 'A':
+                part1 += part['x'] + part['m'] + part['a'] + part['s']
         print(part1)
+
+    part2 = 0
+    for x in range(1, 4000):
+        for m in range(1, 4000):
+            for a in range(1, 4000):
+                for s in range(1, 4000):
+                    part = {'x': x, 'm': m, 'a': a, 's': s}
+                    name = 'in'
+                    while name not in ('A', 'R'):
+                        for rule in workflows[name]:
+                            new_name = rule(part)
+                            if new_name is not None:
+                                name = new_name
+                                break
+                    if name == 'A':
+                        part2 += part['x'] + part['m'] + part['a'] + part['s']
+    print(part2)
 
 
 if __name__ == '__main__':
-    utils.time_me(day18)()
+    utils.time_me(day19)()

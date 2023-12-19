@@ -37,21 +37,3 @@ def time_me(f):
         return out
 
     return timed_f
-
-
-def print_boolean2d(array, sep=''):
-    print('\n'.join([sep.join(['#' if b else '.' for b in line]) for line in array]))
-
-
-def resize(array, shape_variation):
-    shape_1 = np.array(array.shape)
-    shape_variation = np.array(shape_variation)
-    if (shape_variation > 0).any():
-        new_array = np.zeros(shape_1 + np.maximum(0, shape_variation), dtype=array.dtype)
-        new_array[tuple(slice(s) for s in shape_1)] = array
-        array = new_array
-    if (shape_variation < 0).any():
-        new_array = np.zeros(shape_1 + np.maximum(0, -shape_variation), dtype=array.dtype)
-        new_array[tuple(slice(-s, None) for s in shape_1)] = array
-        array = new_array
-    return array, np.maximum(0, -shape_variation)
