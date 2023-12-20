@@ -2,6 +2,7 @@ import collections
 import functools
 import heapq
 import math
+import queue
 import re
 
 import numpy as np
@@ -711,7 +712,7 @@ def day17():
                     c += data[new]
                     if c < score[new[0], new[1], axis] and (*new, 1 - axis) not in done:
                         score[new[0], new[1], axis] = c
-                        heapq.heappush(hq, (c, (*new, 1 - axis)))
+                        heapq.heappush(hq, (c, (new[0], new[1], 1 - axis)))
 
         return int(min(score[-1, -1]))
 
@@ -810,5 +811,105 @@ def day19():
     print(part2)
 
 
+def day20():
+    class Module:
+        def __init__(self):
+            self.outputs = []
+            self.inputs = {}
+            self.mode = 0
+            self.value = False
+
+        def add_input(self, _input):
+            self.inputs[_input] = False
+
+        def add_output(self, _name):
+            self.outputs.append(_name)
+
+        def set_mode(self, _mode):
+            self.mode = _mode
+
+        def send_pulse(self, _input, value):
+            if _input:
+                self.inputs[_input] = value
+            if self.mode == 1:
+                if not value:
+                    self.value = not self.value
+                    return self.outputs, self.value
+            elif self.mode == 2:
+                self.value = not all(self.inputs[_i] for _i in self.inputs)
+                return self.outputs, self.value
+            elif self.mode == 3:
+                self.value = value
+                return self.outputs, self.value
+            return [], None
+
+        def __repr__(self):
+            return "mode {0}, inputs = {1}, outputs = {2}".format(self.mode, self.inputs, self.outputs)
+
+        def __copy__(self):
+            copy = Module()
+            copy.outputs = self.outputs.copy()
+            copy.inputs = self.inputs.copy()
+            copy.mode = self.mode
+            copy.value = self.value
+            return copy
+
+    def press_button(conf):
+        pulse_count = [0, 0]
+        pulses = queue.Queue()
+        pulses.put((None, 'broadcaster', False))
+        while not pulses.empty():
+            sender, receiver, val = pulses.get()
+            pulse_count[val] += 1
+            new_receivers, val = conf[receiver].send_pulse(sender, val)
+            for new_receiver in new_receivers:
+                pulses.put((receiver, new_receiver, val))
+        return pulse_count
+
+    def get_first_activation(conf, label):
+        activations = {_name: 0 for _name in conf[label].inputs}
+
+        i = 0
+        while True:
+            i += 1
+            pulses = queue.Queue()
+            pulses.put((None, 'broadcaster', False))
+            while not pulses.empty():
+                sender, receiver, val = pulses.get()
+                if sender in conf[label].inputs and val:
+                    activations[sender] = i
+                if all(activations[_name] > 0 for _name in activations):
+                    return math.lcm(*activations.values())
+                new_receivers, val = conf[receiver].send_pulse(sender, val)
+                for new_receiver in new_receivers:
+                    pulses.put((receiver, new_receiver, val))
+
+    configuration = collections.defaultdict(Module)
+    with open(utils.get_input(YEAR, 20)) as inp:
+        for line in inp:
+            line = line.strip().split(' -> ')
+            if line[0][0] == '%':
+                name = line[0][1:]
+                configuration[name].set_mode(1)
+            elif line[0][0] == '&':
+                name = line[0][1:]
+                configuration[name].set_mode(2)
+                pass
+            else:
+                name = line[0]
+                configuration[name].set_mode(3)
+            for o in line[1].split(', '):
+                configuration[name].add_output(o)
+                configuration[o].add_input(name)
+
+    part1 = np.array([0, 0])
+    config = {c: configuration[c].__copy__() for c in configuration}
+    for _ in range(1000):
+        part1 += press_button(config)
+    print(part1.prod() == 898557000)
+
+    print(get_first_activation({c: configuration[c].__copy__() for c in configuration}, 'qb') == 238420328103151)
+
+
 if __name__ == '__main__':
-    utils.time_me(day19)()
+    utils.time_me(day20)()
