@@ -951,5 +951,111 @@ def day21():
     print(a * x * x + b * x + c)
 
 
+def day22():
+    def intersect(brick1, brick2):
+        return brick1[0][0] <= brick2[0][1] and brick2[0][0] <= brick1[0][1] \
+            and brick1[1][0] <= brick2[1][1] and brick2[1][0] <= brick1[1][1]
+
+    bricks = []
+    with open(utils.get_input(YEAR, 22)) as inp:
+        for line in inp:
+            start, end = line.strip().split('~')
+            start = start.split(',')
+            end = end.split(',')
+            bricks.append([(int(start[i]), int(end[i])) for i in range(3)])
+    bricks.sort(key=lambda brick: brick[2][0])
+
+    for i in range(len(bricks)):
+        max_z = 1
+        for j in range(i):
+            if intersect(bricks[i], bricks[j]):
+                max_z = max(max_z, bricks[j][2][1] + 1)
+        bricks[i][2] = (max_z, max_z + bricks[i][2][1] - bricks[i][2][0])
+
+    bases = [[] for _ in range(len(bricks))]
+    tops: list[list[int]] = [[] for _ in range(len(bricks))]
+    unique_bases = set()
+    for i in range(len(bricks)):
+        for j in range(i):
+            if intersect(bricks[i], bricks[j]) and bricks[j][2][1] + 1 == bricks[i][2][0]:
+                bases[i].append(j)
+                tops[j].append(i)
+        if len(bases[i]) == 1:
+            unique_bases.add(bases[i][0])
+    print(len(bricks) - len(unique_bases))
+
+    part2 = 0
+    for unique_base in unique_bases:
+        new_bases = [base.copy() for base in bases]
+        to_remove = [unique_base]
+        while to_remove:
+            base = to_remove.pop()
+            for top in tops[base]:
+                new_bases[top].remove(base)
+                if not new_bases[top]:
+                    to_remove.append(top)
+                    part2 += 1
+    print(part2)
+
+
+def day23():
+    with open(utils.get_input(YEAR, 23)) as inp:
+        data = np.array([list(line.strip()) for line in inp])
+
+    def move_part1(i, j, visited):
+        if i == data.shape[0] - 1:
+            return
+
+        if data[i, j] == '^':
+            available_moves = ((-1, 0),)
+        elif data[i, j] == 'v':
+            available_moves = ((1, 0),)
+        elif data[i, j] == '<':
+            available_moves = ((0, -1),)
+        elif data[i, j] == '>':
+            available_moves = ((0, 1),)
+        else:
+            available_moves = ((1, 0), (-1, 0), (0, 1), (0, -1))
+
+        new_moves = []
+        for di, dj in available_moves:
+            if 0 <= i + di < data.shape[0] and 0 <= j + dj < data.shape[1] \
+                    and not data[i + di, j + dj] == '#' \
+                    and not (di == 1 and data[i + di, j + dj] == '<') \
+                    and not (di == -1 and data[i + di, j + dj] == '>') \
+                    and not (dj == 1 and data[i + di, j + dj] == '^') \
+                    and not (dj == -1 and data[i + di, j + dj] == 'v') \
+                    and not (i + di, j + dj) in visited:
+                new_moves.append((i + di, j + dj, visited.union({(i + di, j + dj)})))
+        return new_moves
+
+    def move_part2(i, j, visited):
+        if i == data.shape[0] - 1:
+            return
+
+        new_moves = []
+        for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if 0 <= i + di < data.shape[0] and 0 <= j + dj < data.shape[1] \
+                    and not data[i + di, j + dj] == '#' \
+                    and not (i + di, j + dj) in visited:
+                new_moves.append((i + di, j + dj, visited.union({(i + di, j + dj)})))
+        print(len(new_moves))
+        return new_moves
+
+    def get_max_path_lengths(j_start, move):
+        to_check = [(0, j_start, {(0, j_start)})]
+        max_path_lengths = 0
+        while to_check:
+            i, j, visited = to_check.pop()
+            if i == data.shape[0] - 1:
+                max_path_lengths = max(max_path_lengths, len(visited) - 1)
+            else:
+                to_check += move(i, j, visited)
+        return max_path_lengths
+
+    print(get_max_path_lengths(np.argwhere(data[0] == '.')[0, 0], move_part1))
+    # print(get_max_path_lengths(np.argwhere(data[0] == '.')[0, 0], move_part2))
+
+
 if __name__ == '__main__':
-    utils.time_me(day21)()
+    utils.time_me(day23)()
