@@ -906,10 +906,50 @@ def day20():
     config = {c: configuration[c].__copy__() for c in configuration}
     for _ in range(1000):
         part1 += press_button(config)
-    print(part1.prod() == 898557000)
+    print(part1.prod())
 
-    print(get_first_activation({c: configuration[c].__copy__() for c in configuration}, 'qb') == 238420328103151)
+    print(get_first_activation({c: configuration[c].__copy__() for c in configuration}, 'qb'))
+
+
+def day21():
+    with open(utils.get_input(YEAR, 21)) as inp:
+        data = []
+        n = 0
+        for line in inp:
+            data.append([c != '#' for c in line.strip()])
+            if 'S' in line:
+                start = (n, line.index('S'))
+            n += 1
+        data = np.array(data)
+
+    visited = {start: 0}
+    positions = {start}
+    n_total = 26501365
+    vals = []
+    n = 0
+    while True:
+        if n % data.shape[0] == n_total % data.shape[0]:
+            vals.append(len([None for d in visited.values() if d % 2 == n % 2]))
+            if len(vals) == 3:
+                break
+
+        n += 1
+        new_positions = set()
+        for x, y in positions:
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                if data[(x + dx) % data.shape[0], (y + dy) % data.shape[1]] and (x + dx, y + dy) not in visited:
+                    new_positions.add((x + dx, y + dy))
+                    visited[(x + dx, y + dy)] = n
+        positions = new_positions
+
+    print(len([None for d in visited.values() if d % 2 == 0 and d < 65]))
+
+    a = (vals[2] + vals[0] - 2 * vals[1]) // 2
+    b = (4 * vals[1] - 3 * vals[0] - vals[2]) // 2
+    c = vals[0]
+    x = n_total // data.shape[0]
+    print(a * x * x + b * x + c)
 
 
 if __name__ == '__main__':
-    utils.time_me(day20)()
+    utils.time_me(day21)()
