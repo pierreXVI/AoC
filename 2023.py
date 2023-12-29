@@ -1002,60 +1002,211 @@ def day23():
     with open(utils.get_input(YEAR, 23)) as inp:
         data = np.array([list(line.strip()) for line in inp])
 
-    def move_part1(i, j, visited):
-        if i == data.shape[0] - 1:
-            return
+    def move_part1(i, j, direction, length, visited):
+        i0, j0 = i, j
 
-        if data[i, j] == '^':
-            available_moves = ((-1, 0),)
-        elif data[i, j] == 'v':
-            available_moves = ((1, 0),)
-        elif data[i, j] == '<':
-            available_moves = ((0, -1),)
-        elif data[i, j] == '>':
-            available_moves = ((0, 1),)
-        else:
-            available_moves = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        opposite = {'<': '>', '>': '<', 'v': '^', '^': 'v'}[direction]
+        increments = {'<': (0, -1), '>': (0, 1), 'v': (1, 0), '^': (-1, 0)}
+        orthogonal_check = {
+            '<': lambda: (i == data.shape[0] - 1 or data[i + 1, j] == '#') and (i == 0 or data[i - 1, j] == '#'),
+            '>': lambda: (i == data.shape[0] - 1 or data[i + 1, j] == '#') and (i == 0 or data[i - 1, j] == '#'),
+            'v': lambda: (j == data.shape[1] - 1 or data[i, j + 1] == '#') and (j == 0 or data[i, j - 1] == '#'),
+            '^': lambda: (j == data.shape[1] - 1 or data[i, j + 1] == '#') and (j == 0 or data[i, j - 1] == '#')
+        }[direction]
 
-        new_moves = []
-        for di, dj in available_moves:
-            if 0 <= i + di < data.shape[0] and 0 <= j + dj < data.shape[1] \
-                    and not data[i + di, j + dj] == '#' \
-                    and not (di == 1 and data[i + di, j + dj] == '<') \
-                    and not (di == -1 and data[i + di, j + dj] == '>') \
-                    and not (dj == 1 and data[i + di, j + dj] == '^') \
-                    and not (dj == -1 and data[i + di, j + dj] == 'v') \
-                    and not (i + di, j + dj) in visited:
-                new_moves.append((i + di, j + dj, visited.union({(i + di, j + dj)})))
-        return new_moves
+        di, dj = increments[direction]
+        i += di
+        j += dj
+        while 0 < i < data.shape[0] and 0 < j < data.shape[1] and data[i, j] != opposite and orthogonal_check():
+            i += di
+            j += dj
 
-    def move_part2(i, j, visited):
-        if i == data.shape[0] - 1:
-            return
+        length += abs(i - i0) + abs(j - j0)
+
+        if i == data.shape[0]:
+            return None, length
+
+        if data[i, j] == opposite or (i, j) in visited:
+            return [], -1
 
         new_moves = []
-        for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            if 0 <= i + di < data.shape[0] and 0 <= j + dj < data.shape[1] \
-                    and not data[i + di, j + dj] == '#' \
-                    and not (i + di, j + dj) in visited:
-                new_moves.append((i + di, j + dj, visited.union({(i + di, j + dj)})))
-        print(len(new_moves))
-        return new_moves
+        for new_direction in ('<', '>', 'v', '^'):
+            di, dj = increments[new_direction]
 
-    def get_max_path_lengths(j_start, move):
-        to_check = [(0, j_start, {(0, j_start)})]
+            if new_direction != opposite \
+                    and 0 <= i + di < data.shape[0] and 0 <= j + dj < data.shape[1] and data[i + di, j + dj] != '#':
+                new_moves.append((i, j, new_direction, length, visited.union({(i, j)})))
+        return new_moves, length
+
+    def move_part2(i, j, direction, length, visited):
+        i0, j0 = i, j
+
+        opposite = {'<': '>', '>': '<', 'v': '^', '^': 'v'}[direction]
+        increments = {'<': (0, -1), '>': (0, 1), 'v': (1, 0), '^': (-1, 0)}
+        orthogonal_check = {
+            '<': lambda: (i == data.shape[0] - 1 or data[i + 1, j] == '#') and (i == 0 or data[i - 1, j] == '#'),
+            '>': lambda: (i == data.shape[0] - 1 or data[i + 1, j] == '#') and (i == 0 or data[i - 1, j] == '#'),
+            'v': lambda: (j == data.shape[1] - 1 or data[i, j + 1] == '#') and (j == 0 or data[i, j - 1] == '#'),
+            '^': lambda: (j == data.shape[1] - 1 or data[i, j + 1] == '#') and (j == 0 or data[i, j - 1] == '#')
+        }[direction]
+
+        di, dj = increments[direction]
+        i += di
+        j += dj
+        while 0 < i < data.shape[0] and 0 < j < data.shape[1] and orthogonal_check():
+            i += di
+            j += dj
+
+        length += abs(i - i0) + abs(j - j0)
+
+        if i == data.shape[0]:
+            return None, length
+
+        if data[i, j] == opposite or (i, j) in visited:
+            return [], -1
+
+        new_moves = []
+        for new_direction in ('<', '>', 'v', '^'):
+            di, dj = increments[new_direction]
+
+            if new_direction != opposite \
+                    and 0 <= i + di < data.shape[0] and 0 <= j + dj < data.shape[1] and data[i + di, j + dj] != '#':
+                new_moves.append((i, j, new_direction, length, visited.union({(i, j)})))
+        if len(new_moves) == 1:
+            return move_part2(*new_moves[0][:-1], visited)
+        return new_moves, length
+
+    def get_max_path_lengths(move):
+        j_start = np.argwhere(data[0] == '.')[0, 0]
+        to_check = [(0, j_start, 'v', -1, {(0, j_start)})]
         max_path_lengths = 0
         while to_check:
-            i, j, visited = to_check.pop()
-            if i == data.shape[0] - 1:
-                max_path_lengths = max(max_path_lengths, len(visited) - 1)
+            i, j, direction, length, visited = to_check.pop(0)
+            new_moves, length = move(i, j, direction, length, visited)
+            if new_moves is not None:
+                to_check += new_moves
             else:
-                to_check += move(i, j, visited)
+                max_path_lengths = max(max_path_lengths, length)
         return max_path_lengths
 
-    print(get_max_path_lengths(np.argwhere(data[0] == '.')[0, 0], move_part1))
-    # print(get_max_path_lengths(np.argwhere(data[0] == '.')[0, 0], move_part2))
+    print(get_max_path_lengths(move_part1))
+    print(get_max_path_lengths(move_part2))
+
+
+def day24():
+    hailstones = []
+    with open(utils.get_input(YEAR, 24)) as inp:
+        for line in inp:
+            position, direction = line.strip().split(' @ ')
+            hailstones.append((np.array([int(p) for p in position.split(', ')]),
+                               np.array([int(d) for d in direction.split(', ')])))
+
+    part1 = 0
+    for i in range(len(hailstones)):
+        pos_i, dir_i = hailstones[i]
+        for j in range(i):
+            pos_j, dir_j = hailstones[j]
+            cross_product = dir_i[0] * dir_j[1] - dir_i[1] * dir_j[0]
+            if cross_product == 0:
+                continue
+            t_i = np.dot(pos_j - pos_i, (dir_j[1], -dir_j[0], 0)) / cross_product
+            t_j = np.dot(pos_j - pos_i, (dir_i[1], -dir_i[0], 0)) / cross_product
+            intersection = (pos_j + t_j * dir_j)
+            if t_i > 0 and t_j > 0 \
+                    and 200000000000000 <= intersection[0] <= 400000000000000 \
+                    and 200000000000000 <= intersection[1] <= 400000000000000:
+                part1 += 1
+    print(part1)
+
+    p1, d1 = hailstones[0]
+    p2, d2 = hailstones[1]
+    p3, d3 = hailstones[2]
+
+    a = np.array([
+        [000000000000, (d1 - d2)[2], (d2 - d1)[1], 000000000000, (p2 - p1)[2], (p1 - p2)[1]],
+        [(d2 - d1)[2], 000000000000, (d1 - d2)[0], (p1 - p2)[2], 000000000000, (p2 - p1)[0]],
+        [(d1 - d2)[1], (d2 - d1)[0], 000000000000, (p2 - p1)[1], (p1 - p2)[0], 000000000000],
+        [000000000000, (d1 - d3)[2], (d3 - d1)[1], 000000000000, (p3 - p1)[2], (p1 - p3)[1]],
+        [(d3 - d1)[2], 000000000000, (d1 - d3)[0], (p1 - p3)[2], 000000000000, (p3 - p1)[0]],
+        [(d1 - d3)[1], (d3 - d1)[0], 000000000000, (p3 - p1)[1], (p1 - p3)[0], 000000000000],
+    ])
+
+    b = np.concatenate((
+        np.cross(p1, d1) - np.cross(p2, d2),
+        np.cross(p1, d1) - np.cross(p3, d3),
+    ))
+
+    print(round(sum(np.linalg.solve(a, b)[:3])))
+
+
+def day25():
+    components = collections.defaultdict(set)
+    with open(utils.get_input(YEAR, 25)) as inp:
+        for line in inp:
+            c_0, comps = line.split(':')
+            for c in comps.split():
+                components[c].add(c_0)
+                components[c_0].add(c)
+
+    def all_edge_usage(graph):
+        _edge_usage = collections.defaultdict(int)
+
+        for start in graph:
+            hq = [(0, start), ]
+            dist = {start: 0}
+            prev = {start: None}
+
+            while hq:
+                _c, v = heapq.heappop(hq)
+                for neighbor in graph[v]:
+                    if neighbor not in dist or _c + 1 < dist[neighbor]:
+                        heapq.heappush(hq, (_c + 1, neighbor))
+                        dist[neighbor] = _c + 1
+                        prev[neighbor] = v
+
+            for stop in graph:
+                v = stop
+                while v != start:
+                    _edge_usage[tuple(sorted((v, prev[v])))] += 1
+                    v = prev[v]
+
+        return _edge_usage
+
+    def get_connected_components(graph):
+        graph = graph.copy()
+        connected_comps = []
+        while graph:
+            connected_comps.append(set())
+            to_add = {next(iter(graph.keys()))}
+            while to_add:
+                v = to_add.pop()
+                if v not in connected_comps[-1]:
+                    connected_comps[-1].add(v)
+                    to_add.update(graph[v])
+                    del graph[v]
+        return connected_comps
+
+    most_used_edges = [e for e, _ in sorted(all_edge_usage(components).items(), key=lambda item: item[1], reverse=True)]
+    for i in range(len(most_used_edges)):
+        components[most_used_edges[i][0]].remove(most_used_edges[i][1])
+        components[most_used_edges[i][1]].remove(most_used_edges[i][0])
+        for j in range(i):
+            components[most_used_edges[j][0]].remove(most_used_edges[j][1])
+            components[most_used_edges[j][1]].remove(most_used_edges[j][0])
+            for k in range(j):
+                components[most_used_edges[k][0]].remove(most_used_edges[k][1])
+                components[most_used_edges[k][1]].remove(most_used_edges[k][0])
+                connected_components = get_connected_components(components)
+                if len(connected_components) == 2:
+                    print(math.prod(map(len, connected_components)))
+                    return
+                components[most_used_edges[k][0]].add(most_used_edges[k][1])
+                components[most_used_edges[k][1]].add(most_used_edges[k][0])
+            components[most_used_edges[j][0]].add(most_used_edges[j][1])
+            components[most_used_edges[j][1]].add(most_used_edges[j][0])
+        components[most_used_edges[i][0]].add(most_used_edges[i][1])
+        components[most_used_edges[i][1]].add(most_used_edges[i][0])
 
 
 if __name__ == '__main__':
-    utils.time_me(day23)()
+    utils.time_me(day25)()
