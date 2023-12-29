@@ -1035,5 +1035,98 @@ def day23():
         print(roll)
 
 
+def day24():
+    with open(utils.get_input(YEAR, 24)) as inp:
+        lines = inp.readlines()
+
+    j_start = lines[0].index('.') - 1
+    j_stop = lines[-1].index('.') - 1
+
+    height = len(lines) - 2
+    width = len(lines[0]) - 3
+
+    blizzards = {'>': [], '<': [], 'v': [], '^': []}
+    for _i, line in enumerate(lines):
+        for _j, _c in enumerate(line):
+            if _c in blizzards:
+                blizzards[_c].append((_i - 1, _j - 1))
+
+    def check_free(pi, pj, time):
+        for bi, bj in blizzards['>']:
+            if bi == pi and (bj + time) % width == pj:
+                return False
+        for bi, bj in blizzards['<']:
+            if bi == pi and (bj - time) % width == pj:
+                return False
+        for bi, bj in blizzards['v']:
+            if (bi + time) % height == pi and bj == pj:
+                return False
+        for bi, bj in blizzards['^']:
+            if (bi - time) % height == pi and bj == pj:
+                return False
+        return True
+
+    def find_path(start, stop, t_0):
+        positions = [(t_0, start[0], start[1]), ]
+        min_time = 0
+        while positions:
+            t, i, j = heapq.heappop(positions)
+
+            if 0 < min_time < t + 1:
+                continue
+
+            if (i, j) == stop:
+                min_time = t
+            elif i == -1:
+                heapq.heappush(positions, (t + 1, i, j))
+                if check_free(i + 1, j, t + 1):
+                    heapq.heappush(positions, (t + 1, i + 1, j))
+            else:
+                for new_i, new_j in ((i, j), (i - 1, j), (i, j - 1), (i + 1, j), (i, j + 1)):
+                    if ((0 <= new_i < height and 0 <= new_j < width) or (new_i, new_j) in (start, stop)) \
+                            and check_free(new_i, new_j, t + 1):
+                        if (t + 1, new_i, new_j) not in positions:
+                            heapq.heappush(positions, (t + 1, new_i, new_j))
+        return min_time
+
+    part1 = find_path((-1, j_start), (height, j_stop), 0)
+    print(part1)
+    print(find_path((-1, j_start), (height, j_stop), find_path((height, j_stop), (-1, j_start), part1)))
+
+
+def day25():
+    def decode(snafu):
+        number = 0
+        for d in snafu:
+            number *= 5
+            number += {'=': -2, '-': -1, '0': 0, '1': 1, '2': 2}[d]
+        return number
+
+    def encode(number):
+        digits = []
+        while number > 0:
+            digits.append(number % 5)
+            number = number // 5
+        digits.append(0)
+        for i in range(len(digits) - 1):
+            if digits[i] == 5:
+                digits[i + 1] += 1
+                digits[i] = '0'
+            elif digits[i] == 3:
+                digits[i + 1] += 1
+                digits[i] = '='
+            elif digits[i] == 4:
+                digits[i + 1] += 1
+                digits[i] = '-'
+            else:
+                digits[i] = str(digits[i])
+        if digits[-1] == 0:
+            digits.pop()
+        return ''.join(digits[::-1])
+
+    with open(utils.get_input(YEAR, 25)) as inp:
+        print(encode(sum(decode(line.strip()) for line in inp)))
+
+
 if __name__ == '__main__':
-    day23()
+    utils.time_me(day25)()
