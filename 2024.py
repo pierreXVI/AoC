@@ -147,16 +147,21 @@ def day6():
         i, j = start
         di, dj = -1, 0
         visited = set()
-        while 1 <= i < dummy.shape[0] - 1 and 1 <= j < dummy.shape[1] - 1:
-            dummy[i, j] = -1
+        while True:
             if (i, j, di, dj) in visited:
                 break
             visited.add((i, j, di, dj))
 
+            while 1 <= i < dummy.shape[0] - 1 and 1 <= j < dummy.shape[1] - 1 and dummy[i + di, j + dj] != 1:
+                dummy[i, j] = -1
+                i += di
+                j += dj
+
+            if not (1 <= i < dummy.shape[0] - 1 and 1 <= j < dummy.shape[1] - 1):
+                break
+
             while dummy[i + di, j + dj] == 1:
                 di, dj = dj, -di
-            i += di
-            j += dj
 
         return dummy, not (1 <= i < dummy.shape[0] - 1 and 1 <= j < dummy.shape[1] - 1)
 
@@ -164,12 +169,146 @@ def day6():
     print(np.count_nonzero(first_explore == -1))
 
     part2 = 0
-    for oi, oj in zip(*np.where(first_explore == -1)):
-        if [oi, oj] != start:
-            if not explore(oi, oj)[1]:
+    for obstacle in zip(*np.where(first_explore == -1)):
+        if obstacle != start:
+            if not explore(*obstacle)[1]:
                 part2 += 1
     print(part2)
 
 
+def day7():
+    def count_valid1(n0, n_current, available):
+        if not available:
+            return n0 == n_current
+        return count_valid1(n0, n_current + available[0], available[1:]) \
+            or count_valid1(n0, n_current * available[0], available[1:])
+
+    def count_valid2(n0, n_current, available):
+        if not available:
+            return n0 == n_current
+        return count_valid2(n0, n_current + available[0], available[1:]) \
+            or count_valid2(n0, n_current * available[0], available[1:]) \
+            or count_valid2(n0, int(str(n_current) + str(available[0])), available[1:])
+
+    part1 = dpart2 = 0
+    with open(utils.get_input(YEAR, 7)) as inp:
+        for line in inp:
+            target, values = line.strip().split(':')
+            target = int(target)
+            values = list(map(int, values.split()))
+            if count_valid1(target, 0, values):
+                part1 += target
+            elif count_valid2(target, 0, values):
+                dpart2 += target
+
+    print(part1)
+    print(part1 + dpart2)
+
+
+def day8():
+    with open(utils.get_input(YEAR, 8)) as inp:
+        grid = np.array([[c for c in line.strip()] for line in inp])
+
+    antinodes1 = set()
+    antinodes2 = set()
+    for label in np.unique(grid):
+        if label == '.':
+            continue
+
+        locations = list(zip(*np.where(grid == label)))
+        for i in range(len(locations)):
+            for j in range(i + 1, len(locations)):
+                dx = locations[i][0] - locations[j][0]
+                dy = locations[i][1] - locations[j][1]
+
+                x = locations[i][0]
+                y = locations[i][1]
+                if 0 <= x + dx < grid.shape[0] and 0 <= y + dy < grid.shape[1]:
+                    antinodes1.add((x + dx, y + dy))
+                while 0 <= x < grid.shape[0] and 0 <= y < grid.shape[1]:
+                    antinodes2.add((x, y))
+                    x += dx
+                    y += dy
+
+                x = locations[j][0]
+                y = locations[j][1]
+                if 0 <= x - dx < grid.shape[0] and 0 <= y - dy < grid.shape[1]:
+                    antinodes1.add((x - dx, y - dy))
+                while 0 <= x < grid.shape[0] and 0 <= y < grid.shape[1]:
+                    antinodes2.add((x, y))
+                    x -= dx
+                    y -= dy
+    print(len(antinodes1))
+    print(len(antinodes2))
+
+
+def day9():
+    with open(utils.get_input(YEAR, 9)) as inp:
+        data = list(map(int, list(inp.readline().strip())))
+        data1 = data.copy()
+
+    part1 = 0
+    pos = 0
+    j = len(data1) - 1
+    for i in range(len(data1)):
+        if i % 2 == 0:
+            part1 += (i // 2) * sum(range(pos, pos + data1[i]))
+            pos += data1[i]
+        else:
+            while data1[i] and j > i:
+                if data1[j] <= data1[i]:
+                    part1 += (j // 2) * sum(range(pos, pos + data1[j]))
+                    pos += data1[j]
+                    data1[i] -= data1[j]
+                    j -= 2
+                else:
+                    part1 += (j // 2) * sum(range(pos, pos + data1[i]))
+                    pos += data1[i]
+                    data1[j] -= data1[i]
+                    break
+        if i >= j:
+            break
+
+    memory = []
+    file_id = 0
+    for i in range(len(data)):
+        if i % 2 == 0:
+            memory.append((file_id if i % 2 == 0 else None, data[i]))
+            file_id += 1
+        else:
+            memory.append((None, data[i]))
+
+    i = len(memory) - 1
+    while i >= 0:
+        if memory[i][0] is None:
+            i -= 1
+            continue
+
+        for j in range(i):
+            if memory[j][0] is None and memory[j][1] >= memory[i][1]:
+                if memory[j][1] == memory[i][1]:
+                    memory[j] = (memory[i][0], memory[i][1])
+                else:
+                    memory.insert(j, (memory[i][0], memory[i][1]))
+                    i += 1
+                    j += 1
+                    memory[j] = (None, memory[j][1] - memory[i][1])
+
+                memory[i] = (None, memory[i][1])
+                break
+        i -= 1
+
+
+    part2 = 0
+    pos = 0
+    for file_id, size in memory:
+        if file_id is not None:
+            part2 += file_id * sum(range(pos, pos + size))
+        pos += size
+
+    print(part1)
+    print(part2)
+
+
 if __name__ == '__main__':
-    utils.time_me(day6)()
+    utils.time_me(day9)()
