@@ -8,8 +8,7 @@ np.set_printoptions(linewidth=300)
 
 ROOT = 'data'
 URL = "https://adventofcode.com/{0}/day/{1}/input"
-SESSION = "53616c7465645f5f654e0ca687caca1ce71c5242d9eafc611d1e3e4f41bac39c" \
-          "214d989df66360c8eef709a4ee6f19df47ae6567e02e896c4cab698fa04e0148"
+SESSION = "53616c7465645f5f00dc0c85d6df97f52142daf781811c0f0381372acc18d0095fb0b0ee1caeb6af1b4e5aa37505d6aaccf0cf5352c69353d3ee3ef7870e8e1a"
 
 
 def _download_input(year, day, path):
