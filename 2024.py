@@ -298,7 +298,6 @@ def day9():
                 break
         i -= 1
 
-
     part2 = 0
     pos = 0
     for file_id, size in memory:
@@ -310,5 +309,49 @@ def day9():
     print(part2)
 
 
+def day10():
+    with open(utils.get_input(YEAR, 10)) as inp:
+        grid = np.array([list(l.strip()) for l in inp], dtype=int)
+
+    part1 = [[{(i, j)} if grid[i, j] == 9 else set() for j in range(grid.shape[1])] for i in range(grid.shape[0])]
+    part2 = np.zeros_like(grid)
+    part2[grid == 9] = 1
+    for level in range(8, -1, -1):
+        for i, j in zip(*np.where(grid == level)):
+            if i > 0 and grid[i - 1, j] == level + 1:
+                part1[i][j].update(part1[i - 1][j])
+                part2[i, j] += part2[i - 1, j]
+            if i < grid.shape[0] - 1 and grid[i + 1, j] == level + 1:
+                part1[i][j].update(part1[i + 1][j])
+                part2[i, j] += part2[i + 1, j]
+            if j > 0 and grid[i, j - 1] == level + 1:
+                part1[i][j].update(part1[i][j - 1])
+                part2[i, j] += part2[i, j - 1]
+            if j < grid.shape[1] - 1 and grid[i, j + 1] == level + 1:
+                part1[i][j].update(part1[i][j + 1])
+                part2[i, j] += part2[i, j + 1]
+
+    print(sum([len(part1[i][j]) for i, j in zip(*np.where(grid == 0))]))
+    print(sum(part2[grid == 0]))
+
+def day11():
+    with open(utils.get_input(YEAR, 11)) as inp:
+        stones = inp.readline().strip().split()
+
+    for _ in range(25):
+        new_stones = []
+        for s in stones:
+            if s == '0':
+                new_stones.append('1')
+            elif len(s) % 2 == 0:
+                new_stones.append(s[:len(s) // 2])
+                new_stones.append(s[len(s) // 2:].lstrip('0'))
+                if new_stones[-1] == '':
+                    new_stones[-1] = '0'
+            else:
+                new_stones.append(str(int(s) * 2024))
+        stones = new_stones
+    print(len(stones))
+
 if __name__ == '__main__':
-    utils.time_me(day9)()
+    utils.time_me(day11)()
