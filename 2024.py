@@ -1,4 +1,5 @@
 import collections
+import math
 import re
 
 import numpy as np
@@ -334,24 +335,168 @@ def day10():
     print(sum([len(part1[i][j]) for i, j in zip(*np.where(grid == 0))]))
     print(sum(part2[grid == 0]))
 
+
 def day11():
     with open(utils.get_input(YEAR, 11)) as inp:
         stones = inp.readline().strip().split()
+        stones = ['' if s == '0' else s for s in stones]
 
-    for _ in range(25):
-        new_stones = []
-        for s in stones:
-            if s == '0':
-                new_stones.append('1')
-            elif len(s) % 2 == 0:
-                new_stones.append(s[:len(s) // 2])
-                new_stones.append(s[len(s) // 2:].lstrip('0'))
-                if new_stones[-1] == '':
-                    new_stones[-1] = '0'
+    memoization = {}
+
+    def simulate(stone, n):
+        if (stone, n) in memoization:
+            return memoization[(stone, n)]
+
+        if n == 0:
+            out = 1
+        elif stone == '':
+            out = simulate('1', n - 1)
+        elif len(stone) % 2 == 0:
+            out = simulate(stone[:len(stone) // 2], n - 1) + simulate(stone[len(stone) // 2:].lstrip('0'), n - 1)
+        else:
+            out = simulate(str(int(stone) * 2024), n - 1)
+
+        memoization[(stone, n)] = out
+        return out
+
+    print(sum([simulate(s, 25) for s in stones]))
+    print(sum([simulate(s, 75) for s in stones]))
+
+
+def day12():
+    with open(utils.get_input(YEAR, 12)) as inp:
+        grid = np.array([list(l.strip()) for l in inp])
+
+    visited = np.zeros_like(grid, dtype=bool)
+
+    def peak(_i, _j):
+        return grid[_i, _j] if 0 <= _i < grid.shape[0] and 0 <= _j < grid.shape[1] else ''
+
+    def fill(i, j):
+        label = grid[i, j]
+        todo = [(i, j)]
+        area = perimeter = concave = convex = 0
+        while todo:
+            i, j = todo.pop()
+            if visited[i, j]:
+                continue
+            visited[i, j] = True
+            area += 1
+            sides = [False] * 4
+            if peak(i - 1, j) == label:
+                todo.append((i - 1, j))
             else:
-                new_stones.append(str(int(s) * 2024))
-        stones = new_stones
-    print(len(stones))
+                sides[0] = True
+                if peak(i - 1, j - 1) == label and peak(i, j - 1) == label:
+                    concave += 1
+                if peak(i - 1, j + 1) == label and peak(i, j + 1) == label:
+                    concave += 1
+            if peak(i + 1, j) == label:
+                todo.append((i + 1, j))
+            else:
+                sides[2] = True
+                if peak(i + 1, j - 1) == label and peak(i, j - 1) == label:
+                    concave += 1
+                if peak(i + 1, j + 1) == label and peak(i, j + 1) == label:
+                    concave += 1
+            if peak(i, j - 1) == label:
+                todo.append((i, j - 1))
+            else:
+                sides[1] = True
+                if peak(i - 1, j - 1) == label and peak(i - 1, j) == label:
+                    concave += 1
+                if peak(i + 1, j - 1) == label and peak(i + 1, j) == label:
+                    concave += 1
+            if peak(i, j + 1) == label:
+                todo.append((i, j + 1))
+            else:
+                sides[3] = True
+                if peak(i - 1, j + 1) == label and peak(i - 1, j) == label:
+                    concave += 1
+                if peak(i + 1, j + 1) == label and peak(i + 1, j) == label:
+                    concave += 1
+
+            for direction in range(4):
+                if sides[direction] and sides[(direction + 1) % 4]:
+                    convex += 1
+            perimeter += sum(sides)
+
+        return area, perimeter, convex + (concave // 2)
+
+    part1 = part2 = 0
+    for i in range(grid.shape[0]):
+        for j in range(grid.shape[1]):
+            if not visited[i, j]:
+                area, perimeter, angles = fill(i, j)
+                part1 += area * perimeter
+                part2 += area * angles
+    print(part1)
+    print(part2)
+
+
+def day13():
+    def diophantine_solve(a, b):
+        q, r = divmod(a, b)
+        if r == 0:
+            return 0, b
+        else:
+            x, y = diophantine_solve(b, r)
+            return y, x - q * y
+
+    part1 = part2 = 0
+    with open(utils.get_input(YEAR, 13)) as inp:
+        line = inp.readline()
+        while line:
+            a = np.array(list(map(int, re.match('Button A: X\+(\d+), Y\+(\d+)', line).groups())))
+            b = np.array(list(map(int, re.match('Button B: X\+(\d+), Y\+(\d+)', inp.readline()).groups())))
+            p = np.array(list(map(int, re.match('Prize: X=(\d+), Y=(\d+)', inp.readline()).groups())))
+            inp.readline()
+
+            gcd = np.array([math.gcd(a[0], b[0]), math.gcd(a[1], b[1])])
+
+            a //= gcd
+            b //= gcd
+            det = a[1] * b[0] - a[0] * b[1]
+
+            if det != 0:
+                u_x, v_x = diophantine_solve(a[0], b[0])
+                u_y, v_y = diophantine_solve(a[1], b[1])
+
+                if (p % gcd == 0).all():
+                    p1 = p // gcd
+                    u_x1 = u_x * p1[0]
+                    v_x1 = v_x * p1[0]
+                    u_y1 = u_y * p1[1]
+                    v_y1 = v_y * p1[1]
+
+                    k_x = (a[1] * (u_y1 - u_x1) + b[1] * (v_y1 - v_x1)) // det
+                    k_a = u_x1 + k_x * b[0]
+                    k_b = v_x1 - k_x * a[0]
+
+                    if 0 <= k_a <= 100 and 0 <= k_b <= 100 and (k_a * a + k_b * b == p1).all():
+                        part1 += 3 * k_a + k_b
+
+                p += 10000000000000
+                if (p % gcd == 0).all():
+                    p2 = p // gcd
+                    u_x2 = u_x * p2[0]
+                    v_x2 = v_x * p2[0]
+                    u_y2 = u_y * p2[1]
+                    v_y2 = v_y * p2[1]
+
+                    k_x = (a[1] * (u_y2 - u_x2) + b[1] * (v_y2 - v_x2)) // det
+                    k_a = u_x2 + k_x * b[0]
+                    k_b = v_x2 - k_x * a[0]
+
+                    if 0 <= k_a and 0 <= k_b:
+                        if (k_a * a + k_b * b == p2).all():
+                            part2 += 3 * k_a + k_b
+
+                line = inp.readline()
+
+        print(part1)
+        print(part2)
+
 
 if __name__ == '__main__':
-    utils.time_me(day11)()
+    utils.time_me(day13)()
